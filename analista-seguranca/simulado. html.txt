@@ -1,0 +1,8 @@
+<!DOCTYPE html>
+<html>
+<head><title>Simulado - Cientista de Dados</title></head>
+<body>
+<h1>Simulado de Cientista de Dados</h1>
+<p>Conteúdo em breve.</p>
+</body>
+</html>
