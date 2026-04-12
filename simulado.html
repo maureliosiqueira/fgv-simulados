@@ -1,337 +1,557 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EstudandoTI_Brasil - Simulados FGV para TI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0b2b44 0%, #1b5e7a 100%); min-height: 100vh; padding: 1rem; }
+        /* Telas */
+        .screen { max-width: 1300px; margin: 0 auto; background: white; border-radius: 2rem; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: none; }
+        .screen.active { display: block; }
+        /* Cabeçalhos */
+        .header { background: #ffd966; padding: 1.5rem; text-align: center; }
+        .header h2 { color: #1e3b4a; font-weight: 800; margin-top: 0.5rem; }
+        /* Login */
+        .login-body { padding: 2rem; }
+        .login-body input { width: 100%; padding: 0.8rem 1rem; margin-bottom: 1rem; border: 1px solid #cde0e8; border-radius: 1rem; font-size: 1rem; }
+        .login-body button { width: 100%; background: #0b5e7c; color: white; border: none; padding: 0.8rem; border-radius: 2rem; font-weight: 600; font-size: 1rem; cursor: pointer; transition: 0.2s; }
+        .login-body button:hover { background: #ffaa33; color: #1e3b4a; }
+        .toggle-link { text-align: center; margin-top: 1rem; color: #0b5e7c; cursor: pointer; font-size: 0.85rem; text-decoration: underline; }
+        .msg { text-align: center; margin-top: 0.5rem; font-size: 0.8rem; color: red; }
+        /* Dashboard */
+        .dashboard-header { background: #ffd966; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+        .user-info { display: flex; align-items: center; gap: 1rem; }
+        .logout-btn { background: #c0392b; padding: 0.3rem 1rem; border-radius: 2rem; font-size: 0.8rem; cursor: pointer; color: white; font-weight: 500; }
+        .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; padding: 1.5rem; }
+        .card { background: white; border-radius: 1.5rem; border: 1px solid #e2edf2; box-shadow: 0 5px 15px rgba(0,0,0,0.05); transition: transform 0.2s; }
+        .card:hover { transform: translateY(-5px); }
+        .card-header { background: #f0f7fa; padding: 1rem; display: flex; align-items: center; gap: 0.8rem; border-bottom: 2px solid #ffaa33; }
+        .card-header i { font-size: 1.8rem; color: #0b5e7c; }
+        .card-body { padding: 1rem; }
+        .btn-group { display: flex; gap: 0.6rem; margin-top: 1rem; }
+        .btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.4rem 1rem; border-radius: 2rem; text-decoration: none; font-weight: 600; font-size: 0.8rem; background: #0b5e7c; color: white; cursor: pointer; border: none; }
+        .btn-secondary { background: #e2edf2; color: #1e3b4a; }
+        /* Simulado */
+        .simulator-header { background: linear-gradient(135deg,#0b2b44,#1b5e7a); color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+        .timer { background: #ffaa33; color: #1e3b4a; padding: 0.5rem 1.2rem; border-radius: 2rem; font-weight: 700; font-family: monospace; font-size: 1.2rem; }
+        .progress-bar { background: #e9ecef; height: 8px; }
+        .progress-fill { background: #ffaa33; height: 100%; width: 0%; transition: width 0.3s; }
+        .simulator-content { padding: 2rem; display: flex; gap: 2rem; flex-wrap: wrap; }
+        .questions-panel { flex: 3; }
+        .nav-panel { flex: 1; background: #f8fbfd; border-radius: 1rem; padding: 1rem; position: sticky; top: 1rem; height: fit-content; }
+        .question-card { background: white; border: 1px solid #e2edf2; border-radius: 1rem; padding: 1.5rem; margin-bottom: 1.5rem; }
+        .options { list-style: none; margin-top: 1rem; }
+        .options li { margin: 0.6rem 0; display: flex; align-items: center; gap: 0.6rem; }
+        .nav-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.5rem; margin: 1rem 0; }
+        .nav-btn { background: #e2edf2; border: none; border-radius: 0.5rem; padding: 0.5rem; font-weight: 600; cursor: pointer; }
+        .nav-btn.answered { background: #ffaa33; color: #1e3b4a; }
+        .nav-btn.current { background: #0b5e7c; color: white; box-shadow: 0 0 0 2px #ffaa33; }
+        .control-buttons { display: flex; justify-content: space-between; margin-top: 1rem; gap: 1rem; }
+        .submit-btn { background: #2c8fbb; width: 100%; margin-top: 1rem; }
+        .results { background: #f0f7fa; border-radius: 1rem; padding: 1.5rem; margin: 0 2rem 2rem 2rem; display: none; }
+        .score { font-size: 2rem; font-weight: 800; color: #0b5e7c; }
+        .back-btn { background: #e2edf2; color: #1e3b4a; margin-bottom: 1rem; display: inline-block; cursor: pointer; }
+        footer { text-align: center; padding: 1rem; font-size: 0.7rem; background: #e9f0f4; }
+        @media (max-width:800px) { .simulator-content { flex-direction: column; } .nav-panel { position: static; } }
+    </style>
+</head>
+<body>
+
+<!-- TELA DE LOGIN/CADASTRO -->
+<div id="loginScreen" class="screen active">
+    <div class="header">
+        <i class="fab fa-youtube fa-4x" style="color:#c0392b;"></i>
+        <h2>@EstudandoTI_Brasil</h2>
+        <p>Simulados FGV para concursos de TI</p>
+    </div>
+    <div class="login-body">
+        <div id="loginSection">
+            <input type="email" id="loginEmail" placeholder="E-mail">
+            <input type="password" id="loginSenha" placeholder="Senha">
+            <button id="loginBtn">Entrar</button>
+            <div class="toggle-link" id="showRegister">Não tem conta? Cadastre-se</div>
+            <div id="authMsg" class="msg"></div>
+        </div>
+        <div id="registerSection" style="display:none;">
+            <input type="text" id="regNome" placeholder="Nome completo">
+            <input type="email" id="regEmail" placeholder="E-mail">
+            <input type="password" id="regSenha" placeholder="Senha">
+            <button id="registerBtn">Cadastrar</button>
+            <div class="toggle-link" id="showLogin">Já tem conta? Faça login</div>
+            <div id="regMsg" class="msg"></div>
+        </div>
+    </div>
+</div>
+
+<!-- TELA DASHBOARD (ESCOLHA DA ÁREA) -->
+<div id="dashboardScreen" class="screen">
+    <div class="dashboard-header">
+        <div><i class="fab fa-youtube fa-2x" style="color:#c0392b;"></i> <strong>@EstudandoTI_Brasil</strong></div>
+        <div class="user-info"><span id="userNameDisplay"></span><span class="logout-btn" id="logoutBtn">Sair</span></div>
+    </div>
+    <div class="cards-grid" id="cardsGrid"></div>
+    <footer>Acertando 70% você leva o PDF grátis!</footer>
+</div>
+
+<!-- TELA SIMULADO -->
+<div id="simulatorScreen" class="screen">
+    <div style="padding: 1rem 1rem 0 1rem;">
+        <button id="backToDashboard" class="btn back-btn"><i class="fas fa-arrow-left"></i> Voltar</button>
+    </div>
+    <div class="simulator-header">
+        <h1 id="simulatorTitle"><i class="fas fa-brain"></i> Carregando...</h1>
+        <div class="timer" id="timerDisplay">01:00:00</div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="simulator-content">
+        <div class="questions-panel" id="questionsPanel"></div>
+        <div class="nav-panel">
+            <h3><i class="fas fa-list"></i> Navegação</h3>
+            <div id="navGrid" class="nav-grid"></div>
+            <div class="control-buttons">
+                <button id="prevBtn"><i class="fas fa-arrow-left"></i> Anterior</button>
+                <button id="nextBtn">Próximo <i class="fas fa-arrow-right"></i></button>
+            </div>
+            <button id="submitBtn" class="btn submit-btn"><i class="fas fa-check-circle"></i> Finalizar Simulado</button>
+        </div>
+    </div>
+    <div id="resultsPanel" class="results"></div>
+    <footer>Questões estilo FGV • Correção automática</footer>
+</div>
+
 <script>
-    // ==================== FUNÇÕES DE USUÁRIO ====================
-    function obterUsuarioLogado() {
-        const userData = JSON.parse(localStorage.getItem('usuarioLogado'));
-        if (!userData) return null;
-        const usuarios = JSON.parse(localStorage.getItem('usuarios_sistema') || '[]');
-        return usuarios.find(u => u.id === userData.id && u.ativo) || null;
+    // ==================== GERENCIAMENTO DE USUÁRIOS ====================
+    function inicializarUsuarios() {
+        let usuarios = JSON.parse(localStorage.getItem('usuarios_sistema') || '[]');
+        if (usuarios.length === 0) {
+            usuarios = [
+                { id: 1, nome: "Ana Carolina", email: "ana@teste.com", senha: "123", pontos: 98, ativo: true, downloadsRestantes: 3 },
+                { id: 2, nome: "Bruno Lima", email: "bruno@teste.com", senha: "123", pontos: 95, ativo: true, downloadsRestantes: 3 },
+                { id: 11, nome: "Administrador", email: "admin@admin.com", senha: "admin123", pontos: 0, ativo: true, isAdmin: true, downloadsRestantes: 3 }
+            ];
+            localStorage.setItem('usuarios_sistema', JSON.stringify(usuarios));
+        }
+    }
+    function getUsuarios() { return JSON.parse(localStorage.getItem('usuarios_sistema') || '[]'); }
+    function saveUsuarios(usuarios) { localStorage.setItem('usuarios_sistema', JSON.stringify(usuarios)); }
+    function autenticar(email, senha) {
+        return getUsuarios().find(u => u.email === email && u.senha === senha && u.ativo);
+    }
+    function adicionarUsuario(nome, email, senha) {
+        const usuarios = getUsuarios();
+        const novoId = usuarios.length ? Math.max(...usuarios.map(u => u.id)) + 1 : 1;
+        usuarios.push({ id: novoId, nome, email, senha, pontos: 0, ativo: true, downloadsRestantes: 3 });
+        saveUsuarios(usuarios);
+    }
+    function atualizarUsuarioLogado(usuarioAtualizado) {
+        let usuarios = getUsuarios();
+        const index = usuarios.findIndex(u => u.id === usuarioAtualizado.id);
+        if (index !== -1) usuarios[index] = usuarioAtualizado;
+        saveUsuarios(usuarios);
+        localStorage.setItem('usuarioLogado', JSON.stringify({
+            id: usuarioAtualizado.id,
+            nome: usuarioAtualizado.nome,
+            email: usuarioAtualizado.email,
+            pontos: usuarioAtualizado.pontos,
+            downloadsRestantes: usuarioAtualizado.downloadsRestantes
+        }));
     }
 
-    function atualizarUsuario(novoUsuario) {
-        let usuarios = JSON.parse(localStorage.getItem('usuarios_sistema'));
-        const index = usuarios.findIndex(u => u.id === novoUsuario.id);
-        if (index !== -1) {
-            usuarios[index] = novoUsuario;
-            localStorage.setItem('usuarios_sistema', JSON.stringify(usuarios));
-            localStorage.setItem('usuarioLogado', JSON.stringify({
-                id: novoUsuario.id,
-                nome: novoUsuario.nome,
-                email: novoUsuario.email,
-                pontos: novoUsuario.pontos,
-                downloadsRestantes: novoUsuario.downloadsRestantes
+    let usuarioAtual = null;
+
+    // ==================== DADOS DAS ÁREAS ====================
+    const areas = [
+        { id: "cientista-dados", nome: "Cientista de Dados", icone: "brain", pdf: "ebook_cientista_dados.pdf", questoes: null },
+        { id: "engenheiro-dados", nome: "Engenheiro de Dados", icone: "database", pdf: "ebook_Engenheiro de Dados.pdf", questoes: null },
+        { id: "analista-seguranca", nome: "Analista de Segurança", icone: "shield-alt", pdf: "ebook_Analista de Segurança da Informação.pdf", questoes: null },
+        { id: "analista-infra", nome: "Analista de Infraestrutura", icone: "server", pdf: "ebook_Analista de Infraestrutura.pdf", questoes: null },
+        { id: "analista-sistemas", nome: "Analista de Sistemas", icone: "code", pdf: "ebook_Analista de Sistemas.pdf", questoes: null },
+        { id: "analista-ux", nome: "Analista de UX", icone: "palette", pdf: "ebook_UX.pdf", questoes: null }
+    ];
+
+    // Banco de questões genérico (20 questões de exemplo). Para cada área você pode personalizar.
+    const questoesBase = [
+        { pergunta: "O que é overfitting em machine learning?", alternativas: ["Modelo muito simples", "Alta variância e baixo viés", "Baixa acurácia no treino", "Regularização L2"], correta: 1 },
+        { pergunta: "Qual métrica NÃO é recomendada para classes desbalanceadas?", alternativas: ["Acurácia", "Precisão", "Recall", "F1-Score"], correta: 0 },
+        { pergunta: "O que significa DW/BI?", alternativas: ["Data Warehouse / Business Intelligence", "Digital Web / Binary Interface", "Distributed Workflow", "Data Window"], correta: 0 },
+        { pergunta: "Qual algoritmo é usado para redução de dimensionalidade?", alternativas: ["PCA", "K-Means", "Random Forest", "SVM"], correta: 0 },
+        { pergunta: "Em SQL, qual comando remove uma tabela?", alternativas: ["DELETE TABLE", "DROP TABLE", "TRUNCATE", "REMOVE"], correta: 1 },
+        { pergunta: "O que é um Data Lake?", alternativas: ["Dados brutos sem esquema rígido", "Banco relacional normalizado", "Ferramenta ETL", "Data Warehouse otimizado"], correta: 0 },
+        { pergunta: "Qual técnica de deep learning é usada para imagens?", alternativas: ["RNN", "LSTM", "CNN", "Transformer"], correta: 2 },
+        { pergunta: "O que mede o F1-Score?", alternativas: ["Média harmônica entre precisão e recall", "Apenas precisão", "Apenas recall", "Acurácia balanceada"], correta: 0 },
+        { pergunta: "O que é IA generativa?", alternativas: ["Classificação de dados", "Geração de novos conteúdos", "Clusterização", "Regressão linear"], correta: 1 },
+        { pergunta: "Qual comando Kubernetes gerencia réplicas de Pods?", alternativas: ["Service", "Deployment", "ConfigMap", "Ingress"], correta: 1 },
+        { pergunta: "O que significa LGPD?", alternativas: ["Lei Geral de Proteção de Dados", "Lei de Gestão de Projetos Digitais", "Lei de Governança Pública", "Lei de Dados Gerais"], correta: 0 },
+        { pergunta: "Qual é a principal característica do NoSQL?", alternativas: ["Esquema flexível", "Joins complexos", "ACID estrito", "Normalização"], correta: 0 },
+        { pergunta: "O que é DevOps?", alternativas: ["Integração e entrega contínuas", "Apenas desenvolvimento", "Apenas operações", "Banco de dados"], correta: 0 },
+        { pergunta: "Qual ferramenta é usada para orquestração de containers?", alternativas: ["Docker", "Kubernetes", "Ansible", "Terraform"], correta: 1 },
+        { pergunta: "O que é um SIEM?", alternativas: ["Gerenciamento de eventos e informações de segurança", "Sistema de detecção de intrusão", "Firewall de próxima geração", "Antivírus corporativo"], correta: 0 },
+        { pergunta: "Em UX, o que significa prototipação?", alternativas: ["Modelo interativo do produto", "Código final", "Documentação técnica", "Teste de usabilidade"], correta: 0 },
+        { pergunta: "O que é uma View no SQL?", alternativas: ["Tabela virtual baseada em consulta", "Tabela física", "Índice", "Procedimento armazenado"], correta: 0 },
+        { pergunta: "O que mede a entropia em árvores de decisão?", alternativas: ["Grau de impureza", "Acurácia", "Profundidade da árvore", "Número de folhas"], correta: 0 },
+        { pergunta: "Qual é a função da camada softmax?", alternativas: ["Normalizar saídas em probabilidades", "Ativação ReLU", "Pooling", "Dropout"], correta: 0 },
+        { pergunta: "O que é um Webhook?", alternativas: ["Callback HTTP", "API REST", "WebSocket", "Fila de mensagens"], correta: 0 }
+    ];
+
+    // Função para copiar questões (cada área pode ter seu próprio conjunto, mas usaremos o mesmo)
+    function getQuestoesParaArea(areaId) {
+        // Aqui você poderia carregar questões diferentes por área. Por simplicidade, usamos as mesmas.
+        return JSON.parse(JSON.stringify(questoesBase));
+    }
+
+    // ==================== SIMULADO (ESTADO) ====================
+    let questoesAtuais = [];
+    let respostas = [];
+    let indiceAtual = 0;
+    let tempoRestante = 3600; // 1 hora
+    let timerInterval = null;
+    let simuladoFinalizado = false;
+    let areaSelecionada = null;
+    let storageKey = "";
+
+    function salvarProgressoSimulado() {
+        if (!simuladoFinalizado && areaSelecionada) {
+            localStorage.setItem(storageKey, JSON.stringify({
+                respostas: respostas,
+                tempoRestante: tempoRestante,
+                indiceAtual: indiceAtual
             }));
         }
     }
 
-    // Redireciona se não estiver logado
-    const usuario = obterUsuarioLogado();
-    if (!usuario) {
-        alert("Você precisa estar logado para acessar o simulado.");
-        window.location.href = "../index.html"; // ajuste o caminho se necessário
-    }
-
-    // ==================== DADOS DO SIMULADO ====================
-    function shuffleContent(optionsArray, correctIndex) {
-        let content = optionsArray.slice();
-        for (let i = content.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [content[i], content[j]] = [content[j], content[i]];
-        }
-        let newCorrect = content.indexOf(optionsArray[correctIndex]);
-        return { options: content, correct: newCorrect };
-    }
-
-    const fixedQuestions = [ /* ... seu array fixo ... */ ]; // (mesmo do seu código)
-
-    let questions = fixedQuestions.map(q => {
-        let shuffled = shuffleContent(q.options, q.correct);
-        return { text: q.text, options: shuffled.options, correct: shuffled.correct };
-    });
-
-    const topics = ["Regressão Logística","Árvores","SVM","Naive Bayes","K-NN","Ensembles","Validação Cruzada","Otimização","Métricas","K-means","Regras de Associação","t-SNE","Redes Neurais","BatchNorm","ReLU","Softmax","Backpropagation","TensorFlow","PyTorch","Distribuição Normal","Poisson","Autovalores","SVD","Normas","Intervalo de Confiança","Correlação","ANOVA","Bayes","ggplot2","Power BI","Storytelling","SQL","Normalização","Triggers","Views","ETL","OLAP","Geopandas","Scrum","PMBOK","Kanban","IA Generativa","LLM","Embeddings","LGPD","Ética","Data Warehouse","Star Schema","Data Lake","Lambda","Kappa","Airflow","Spark","Kafka","MongoDB","Redis","Cassandra","Prometheus","Grafana","ELK","AWS S3","BigQuery","REST","GraphQL","OAuth2","JWT","Docker","Terraform","Ansible","CI/CD","Jenkins"];
-
-    for (let i = questions.length; i < 100; i++) {
-        let tema = topics[i % topics.length];
-        let texto, opcoesBase, corretaIndex;
-        if (tema === "SVD") {
-            texto = "A decomposição SVD resulta em:";
-            opcoesBase = ["UΣVᵀ", "QΛQᵀ", "LU", "PLU", "QR"];
-            corretaIndex = 0;
-        } else if (tema === "ggplot2") {
-            texto = "No ggplot2, comando para pontos:";
-            opcoesBase = ["geom_bar()", "geom_point()", "geom_line()", "geom_histogram()", "geom_boxplot()"];
-            corretaIndex = 1;
-        } else if (tema === "Normalização") {
-            texto = "A 3FN elimina:";
-            opcoesBase = ["dependência parcial", "dependência transitiva", "grupos repetitivos", "tabelas temporárias", "chaves estrangeiras"];
-            corretaIndex = 1;
-        } else {
-            texto = `Sobre ${tema}, assinale a alternativa correta:`;
-            opcoesBase = [
-                `Conceito incorreto sobre ${tema}`,
-                `Definição precisa de ${tema} (correta)`,
-                `Afirmação parcialmente verdadeira`,
-                `Exemplo que não se aplica`,
-                `Detalhe avançado e irrelevante`
-            ];
-            corretaIndex = 1;
-        }
-        let shuffled = shuffleContent(opcoesBase, corretaIndex);
-        questions.push({ text: texto, options: shuffled.options, correct: shuffled.correct });
-    }
-
-    // ==================== ESTADO DO SIMULADO ====================
-    let userAnswers = new Array(100).fill(null);
-    let currentIndex = 0;
-    let timerSeconds = 4 * 3600; // 4 horas
-    let timerInterval;
-    let submitted = false;
-
-    // Chave única para este simulado (por usuário e área)
-    const STORAGE_KEY = `simulado_cientista_${usuario.id}`;
-
-    function carregarProgresso() {
-        const saved = localStorage.getItem(STORAGE_KEY);
+    function carregarProgressoSimulado() {
+        const saved = localStorage.getItem(storageKey);
         if (saved) {
             try {
                 const data = JSON.parse(saved);
-                if (data.answers && data.answers.length === 100) userAnswers = data.answers;
-                if (data.timerSeconds) timerSeconds = data.timerSeconds;
-                if (data.submitted) submitted = data.submitted;
-                currentIndex = data.currentIndex || 0;
+                respostas = data.respostas || new Array(questoesAtuais.length).fill(null);
+                tempoRestante = data.tempoRestante ?? 3600;
+                indiceAtual = data.indiceAtual ?? 0;
             } catch(e) {}
-        }
-        if (submitted) {
-            clearInterval(timerInterval);
-            document.getElementById('submitBtn').disabled = true;
-            document.getElementById('submitBtn').style.opacity = '0.6';
-            exibirResultados(true); // apenas mostra o resultado já calculado
-        }
-    }
-
-    function salvarProgresso() {
-        if (!submitted) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify({
-                answers: userAnswers,
-                timerSeconds: timerSeconds,
-                currentIndex: currentIndex,
-                submitted: false
-            }));
-        }
-    }
-
-    // ==================== RENDERIZAÇÃO ====================
-    function formatTime(s) {
-        let h = Math.floor(s / 3600);
-        let m = Math.floor((s % 3600) / 60);
-        let sec = s % 60;
-        return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`;
-    }
-
-    function updateTimer() {
-        if (submitted) return;
-        if (timerSeconds <= 0) {
-            clearInterval(timerInterval);
-            alert("Tempo esgotado! O simulado será finalizado automaticamente.");
-            submitSimulado();
         } else {
-            timerSeconds--;
-            document.getElementById('timerDisplay').innerText = formatTime(timerSeconds);
-            salvarProgresso();
+            respostas = new Array(questoesAtuais.length).fill(null);
         }
     }
 
-    function renderCurrentQuestion() {
-        const q = questions[currentIndex];
-        const ans = userAnswers[currentIndex];
-        const letters = ['A', 'B', 'C', 'D', 'E'];
-        const optsHtml = q.options.map((opt, idx) => `
-            <li>
-                <input type="radio" name="q${currentIndex}" value="${idx}" id="q${currentIndex}_${idx}" ${ans === idx ? 'checked' : ''}>
-                <label for="q${currentIndex}_${idx}">${letters[idx]}) ${opt}</label>
-            </li>
-        `).join('');
-        const panel = document.getElementById('questionsPanel');
-        panel.innerHTML = `
-            <div class="question-card">
-                <div class="question-text">${currentIndex + 1}. ${q.text}</div>
-                <ul class="options">${optsHtml}</ul>
-            </div>
-        `;
-        // Adiciona eventos aos radios
-        document.querySelectorAll(`input[name="q${currentIndex}"]`).forEach(radio => {
+    function formatarTempo(segundos) {
+        let h = Math.floor(segundos / 3600);
+        let m = Math.floor((segundos % 3600) / 60);
+        let s = segundos % 60;
+        return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+    }
+
+    function atualizarTimerUI() {
+        document.getElementById('timerDisplay').innerText = formatarTempo(tempoRestante);
+    }
+
+    function iniciarTimer() {
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            if (simuladoFinalizado) return;
+            if (tempoRestante <= 0) {
+                clearInterval(timerInterval);
+                alert("Tempo esgotado! Finalizando simulado.");
+                finalizarSimulado();
+            } else {
+                tempoRestante--;
+                atualizarTimerUI();
+                salvarProgressoSimulado();
+            }
+        }, 1000);
+    }
+
+    function renderizarQuestao() {
+        const q = questoesAtuais[indiceAtual];
+        const respostaAtual = respostas[indiceAtual];
+        let html = `<div class="question-card">
+            <div class="question-text">${indiceAtual+1}. ${q.pergunta}</div>
+            <ul class="options">`;
+        q.alternativas.forEach((alt, idx) => {
+            html += `<li>
+                <input type="radio" name="questao" value="${idx}" id="alt${idx}" ${respostaAtual === idx ? 'checked' : ''}>
+                <label for="alt${idx}">${String.fromCharCode(65+idx)}) ${alt}</label>
+            </li>`;
+        });
+        html += `</ul></div>`;
+        document.getElementById('questionsPanel').innerHTML = html;
+        document.querySelectorAll('input[name="questao"]').forEach(radio => {
             radio.addEventListener('change', (e) => {
-                userAnswers[currentIndex] = parseInt(e.target.value);
-                atualizarNavegacao();
+                respostas[indiceAtual] = parseInt(e.target.value);
+                atualizarNavegacaoUI();
                 atualizarBarraProgresso();
-                salvarProgresso();
+                salvarProgressoSimulado();
             });
         });
     }
 
-    function atualizarNavegacao() {
-        const botoes = document.querySelectorAll('.nav-btn');
-        botoes.forEach((btn, idx) => {
-            if (userAnswers[idx] !== null) btn.classList.add('answered');
-            else btn.classList.remove('answered');
-            if (idx === currentIndex) btn.classList.add('current');
-            else btn.classList.remove('current');
-        });
-        atualizarBarraProgresso();
-    }
-
-    function renderNavGrid() {
+    function renderizarNavegacao() {
         let html = '';
-        for (let i = 0; i < 100; i++) {
-            html += `<button class="nav-btn ${userAnswers[i] !== null ? 'answered' : ''}" data-idx="${i}">${i+1}</button>`;
+        for (let i = 0; i < questoesAtuais.length; i++) {
+            html += `<button class="nav-btn ${respostas[i] !== null ? 'answered' : ''} ${i === indiceAtual ? 'current' : ''}" data-idx="${i}">${i+1}</button>`;
         }
         document.getElementById('navGrid').innerHTML = html;
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                currentIndex = parseInt(btn.getAttribute('data-idx'));
-                renderCurrentQuestion();
-                atualizarNavegacao();
-                salvarProgresso();
+                indiceAtual = parseInt(btn.getAttribute('data-idx'));
+                renderizarQuestao();
+                atualizarNavegacaoUI();
+                salvarProgressoSimulado();
             });
         });
-        atualizarNavegacao();
+    }
+
+    function atualizarNavegacaoUI() {
+        const botoes = document.querySelectorAll('.nav-btn');
+        botoes.forEach((btn, i) => {
+            if (respostas[i] !== null) btn.classList.add('answered');
+            else btn.classList.remove('answered');
+            if (i === indiceAtual) btn.classList.add('current');
+            else btn.classList.remove('current');
+        });
     }
 
     function atualizarBarraProgresso() {
-        const respondidas = userAnswers.filter(a => a !== null).length;
-        const percent = (respondidas / 100) * 100;
+        const respondidas = respostas.filter(r => r !== null).length;
+        const percent = (respondidas / questoesAtuais.length) * 100;
         document.getElementById('progressFill').style.width = `${percent}%`;
     }
 
-    // ==================== FINALIZAÇÃO ====================
-    async function submitSimulado() {
-        if (submitted) return;
+    function finalizarSimulado() {
+        if (simuladoFinalizado) return;
         clearInterval(timerInterval);
-        submitted = true;
+        simuladoFinalizado = true;
 
-        let corretas = 0;
-        for (let i = 0; i < 100; i++) {
-            if (userAnswers[i] !== null && userAnswers[i] === questions[i].correct) corretas++;
+        let acertos = 0;
+        for (let i = 0; i < questoesAtuais.length; i++) {
+            if (respostas[i] !== null && respostas[i] === questoesAtuais[i].correta) acertos++;
         }
-        const percentual = (corretas / 100) * 100;
-
-        // Atualiza pontos do usuário (ganha o percentual em pontos)
+        const percentual = (acertos / questoesAtuais.length) * 100;
         const pontosGanhos = Math.floor(percentual);
+
+        // Atualizar pontos e downloads do usuário
         if (pontosGanhos > 0) {
-            usuario.pontos = (usuario.pontos || 0) + pontosGanhos;
-            atualizarUsuario(usuario);
+            usuarioAtual.pontos += pontosGanhos;
+            atualizarUsuarioLogado(usuarioAtual);
         }
 
-        // Salva que este simulado já foi finalizado (evita re-submissão)
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({
-            answers: userAnswers,
-            timerSeconds: timerSeconds,
-            submitted: true,
-            resultado: { corretas, percentual }
-        }));
-
-        exibirResultados(false, corretas, percentual);
-        document.getElementById('submitBtn').disabled = true;
-        document.getElementById('submitBtn').style.opacity = '0.6';
-    }
-
-    function exibirResultados(apenasExibir, corretas = null, percentual = null) {
-        if (!apenasExibir) {
-            // cálculo já feito fora
-        } else {
-            // carregar do localStorage
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
-                const data = JSON.parse(saved);
-                corretas = data.resultado.corretas;
-                percentual = data.resultado.percentual;
-            } else {
-                return;
-            }
-        }
-
-        const resultsPanel = document.getElementById('resultsPanel');
-        resultsPanel.style.display = 'block';
-        let botoesAdicionais = '';
+        const resultsDiv = document.getElementById('resultsPanel');
+        resultsDiv.style.display = 'block';
+        let botoesDownload = '';
 
         if (percentual >= 70) {
-            // Verifica se ainda tem downloads restantes
-            if (usuario.downloadsRestantes > 0) {
-                botoesAdicionais = `
-                    <button id="downloadPdfBtn" style="background:#28a745; margin-top:1rem;">
-                        <i class="fas fa-download"></i> Baixar E-book (restam ${usuario.downloadsRestantes} download(s))
-                    </button>
-                `;
+            if (usuarioAtual.downloadsRestantes > 0) {
+                botoesDownload = `<button id="downloadBtn" style="background:#28a745; margin-top:1rem;"><i class="fas fa-download"></i> Baixar E-book (restam ${usuarioAtual.downloadsRestantes})</button>`;
             } else {
-                botoesAdicionais = `<p style="color:#c0392b;">⚠️ Você atingiu 70%, mas não tem mais downloads disponíveis. Complete outros simulados para ganhar mais créditos.</p>`;
+                botoesDownload = `<p style="color:#c0392b;">⚠️ Você atingiu 70%, mas não tem mais downloads disponíveis.</p>`;
             }
         } else {
-            botoesAdicionais = `<p style="color:#c0392b;">🔒 Atingiu ${percentual.toFixed(1)}% – mínimo 70% para baixar o PDF.</p>`;
+            botoesDownload = `<p style="color:#c0392b;">🔒 Você atingiu ${percentual.toFixed(1)}% – mínimo 70% para baixar o PDF.</p>`;
         }
 
-        resultsPanel.innerHTML = `
+        resultsDiv.innerHTML = `
             <h3>Resultado Final</h3>
-            <div class="score">${corretas}/100 (${percentual.toFixed(1)}%)</div>
-            <p>Você respondeu ${userAnswers.filter(a => a !== null).length} questões.</p>
-            <p>+${Math.floor(percentual)} pontos adicionados à sua conta.</p>
-            ${botoesAdicionais}
+            <div class="score">${acertos}/${questoesAtuais.length} (${percentual.toFixed(1)}%)</div>
+            <p>+${pontosGanhos} pontos adicionados.</p>
+            ${botoesDownload}
             <button id="restartBtn" style="margin-top:1rem;"><i class="fas fa-sync-alt"></i> Refazer Simulado</button>
         `;
 
+        if (percentual >= 70 && usuarioAtual.downloadsRestantes > 0) {
+            const downloadBtn = document.getElementById('downloadBtn');
+            if (downloadBtn) {
+                downloadBtn.addEventListener('click', () => {
+                    if (usuarioAtual.downloadsRestantes > 0) {
+                        usuarioAtual.downloadsRestantes--;
+                        atualizarUsuarioLogado(usuarioAtual);
+                        alert(`Download liberado! Restam ${usuarioAtual.downloadsRestantes} downloads.`);
+                        // Simula o download (abre o PDF). Se o arquivo não existir, apenas avisa.
+                        window.open(areaSelecionada.pdf, '_blank');
+                    } else {
+                        alert("Sem downloads disponíveis.");
+                    }
+                });
+            }
+        }
+
         document.getElementById('restartBtn')?.addEventListener('click', () => {
-            localStorage.removeItem(STORAGE_KEY);
-            location.reload();
+            localStorage.removeItem(storageKey);
+            iniciarSimulado(areaSelecionada);
         });
 
-        if (percentual >= 70 && usuario.downloadsRestantes > 0) {
-            document.getElementById('downloadPdfBtn')?.addEventListener('click', () => {
-                // Desconta 1 download
-                if (usuario.downloadsRestantes > 0) {
-                    usuario.downloadsRestantes--;
-                    atualizarUsuario(usuario);
-                    alert(`Download liberado! Agora você tem ${usuario.downloadsRestantes} download(s) restante(s).`);
-                    window.open('ebook_cientista_dados.pdf', '_blank');
-                } else {
-                    alert("Você não possui mais downloads disponíveis.");
-                }
-            });
-        }
+        document.getElementById('submitBtn').disabled = true;
+        document.getElementById('submitBtn').style.opacity = '0.6';
+        localStorage.removeItem(storageKey); // limpa progresso antigo
     }
 
-    // ==================== INICIALIZAÇÃO ====================
-    function init() {
-        carregarProgresso();
-        renderNavGrid();
-        renderCurrentQuestion();
-        if (!submitted) {
-            timerInterval = setInterval(updateTimer, 1000);
-        } else {
-            document.getElementById('timerDisplay').innerText = formatTime(timerSeconds);
+    function iniciarSimulado(area) {
+        areaSelecionada = area;
+        questoesAtuais = getQuestoesParaArea(area.id);
+        storageKey = `simulado_${area.id}_${usuarioAtual.id}`;
+        carregarProgressoSimulado();
+        simuladoFinalizado = false;
+        indiceAtual = indiceAtual || 0;
+
+        // Reset timer se não houver progresso salvo
+        if (!localStorage.getItem(storageKey)) {
+            tempoRestante = 3600;
         }
+        atualizarTimerUI();
+        if (timerInterval) clearInterval(timerInterval);
+        iniciarTimer();
+
+        document.getElementById('simulatorTitle').innerHTML = `<i class="fas fa-${area.icone}"></i> ${area.nome}`;
+        renderizarNavegacao();
+        renderizarQuestao();
+        atualizarBarraProgresso();
+        document.getElementById('submitBtn').disabled = false;
+        document.getElementById('submitBtn').style.opacity = '1';
+        document.getElementById('resultsPanel').style.display = 'none';
+        document.getElementById('resultsPanel').innerHTML = '';
+
+        // eventos dos botões de navegação
         document.getElementById('prevBtn').onclick = () => {
-            if (currentIndex > 0 && !submitted) {
-                currentIndex--;
-                renderCurrentQuestion();
-                atualizarNavegacao();
-                salvarProgresso();
+            if (indiceAtual > 0 && !simuladoFinalizado) {
+                indiceAtual--;
+                renderizarQuestao();
+                atualizarNavegacaoUI();
+                salvarProgressoSimulado();
             }
         };
         document.getElementById('nextBtn').onclick = () => {
-            if (currentIndex < 99 && !submitted) {
-                currentIndex++;
-                renderCurrentQuestion();
-                atualizarNavegacao();
-                salvarProgresso();
+            if (indiceAtual < questoesAtuais.length-1 && !simuladoFinalizado) {
+                indiceAtual++;
+                renderizarQuestao();
+                atualizarNavegacaoUI();
+                salvarProgressoSimulado();
             }
         };
         document.getElementById('submitBtn').onclick = () => {
-            if (submitted) return;
-            if (confirm("Tem certeza que deseja finalizar o simulado?")) {
-                submitSimulado();
-            }
+            if (confirm("Finalizar simulado?")) finalizarSimulado();
         };
-        atualizarBarraProgresso();
     }
 
-    init();
+    // ==================== CONTROLE DE TELAS ====================
+    function showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+    }
+
+    // Dashboard: montar cards
+    function renderDashboard() {
+        const container = document.getElementById('cardsGrid');
+        container.innerHTML = '';
+        areas.forEach(area => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+                <div class="card-header"><i class="fas fa-${area.icone}"></i><h3>${area.nome}</h3></div>
+                <div class="card-body">
+                    <p>Questões estilo FGV. Acertando 70% você ganha o E-book!</p>
+                    <div class="btn-group">
+                        <button class="btn start-simulado" data-area='${JSON.stringify(area)}'><i class="fas fa-play"></i> Simulado</button>
+                        <button class="btn btn-secondary download-ebook" data-pdf="${area.pdf}"><i class="fas fa-book"></i> E-book</button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+        document.querySelectorAll('.start-simulado').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const area = JSON.parse(btn.getAttribute('data-area'));
+                iniciarSimulado(area);
+                showScreen('simulatorScreen');
+            });
+        });
+        document.querySelectorAll('.download-ebook').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const pdf = btn.getAttribute('data-pdf');
+                window.open(pdf, '_blank');
+            });
+        });
+        document.getElementById('userNameDisplay').innerText = `Olá, ${usuarioAtual.nome}`;
+    }
+
+    // ==================== LOGIN/CADASTRO ====================
+    function fazerLogin() {
+        const email = document.getElementById('loginEmail').value.trim();
+        const senha = document.getElementById('loginSenha').value;
+        const user = autenticar(email, senha);
+        if (user) {
+            usuarioAtual = user;
+            localStorage.setItem('usuarioLogado', JSON.stringify({
+                id: user.id, nome: user.nome, email: user.email,
+                pontos: user.pontos, downloadsRestantes: user.downloadsRestantes
+            }));
+            renderDashboard();
+            showScreen('dashboardScreen');
+        } else {
+            document.getElementById('authMsg').innerText = 'E-mail ou senha inválidos.';
+        }
+    }
+
+    function fazerCadastro() {
+        const nome = document.getElementById('regNome').value.trim();
+        const email = document.getElementById('regEmail').value.trim();
+        const senha = document.getElementById('regSenha').value;
+        if (!nome || !email || !senha) {
+            document.getElementById('regMsg').innerText = 'Preencha todos os campos.';
+            return;
+        }
+        const usuarios = getUsuarios();
+        if (usuarios.find(u => u.email === email)) {
+            document.getElementById('regMsg').innerText = 'E-mail já cadastrado.';
+            return;
+        }
+        adicionarUsuario(nome, email, senha);
+        document.getElementById('regMsg').innerText = 'Cadastro realizado! Faça login.';
+        setTimeout(() => {
+            document.getElementById('loginSection').style.display = 'block';
+            document.getElementById('registerSection').style.display = 'none';
+        }, 1500);
+    }
+
+    function logout() {
+        localStorage.removeItem('usuarioLogado');
+        location.reload();
+    }
+
+    // ==================== INICIALIZAÇÃO ====================
+    inicializarUsuarios();
+    const usuarioSalvo = localStorage.getItem('usuarioLogado');
+    if (usuarioSalvo) {
+        const data = JSON.parse(usuarioSalvo);
+        const user = getUsuarios().find(u => u.id === data.id && u.ativo);
+        if (user) {
+            usuarioAtual = user;
+            renderDashboard();
+            showScreen('dashboardScreen');
+        } else {
+            showScreen('loginScreen');
+        }
+    } else {
+        showScreen('loginScreen');
+    }
+
+    // Eventos de UI
+    document.getElementById('loginBtn').addEventListener('click', fazerLogin);
+    document.getElementById('registerBtn').addEventListener('click', fazerCadastro);
+    document.getElementById('showRegister').addEventListener('click', () => {
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('registerSection').style.display = 'block';
+    });
+    document.getElementById('showLogin').addEventListener('click', () => {
+        document.getElementById('loginSection').style.display = 'block';
+        document.getElementById('registerSection').style.display = 'none';
+    });
+    document.getElementById('logoutBtn').addEventListener('click', logout);
+    document.getElementById('backToDashboard').addEventListener('click', () => {
+        if (timerInterval) clearInterval(timerInterval);
+        showScreen('dashboardScreen');
+    });
 </script>
+</body>
+</html>
