@@ -1,24 +1,211 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-    <title>FGV Concursos TI</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>EstudandoTI_Brasil - Simulados FGV para TI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        body { font-family: Arial; text-align: center; padding: 2rem; }
-        .cards { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
-        .card { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; width: 200px; }
-        a { display: inline-block; margin: 5px; padding: 5px 10px; background: #0077cc; color: white; text-decoration: none; border-radius: 5px; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0b2b44 0%, #1b5e7a 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+        .login-card, .dashboard-container { max-width: 500px; width: 100%; background: white; border-radius: 2rem; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+        .dashboard-container { max-width: 1300px; padding: 1.5rem; }
+        .login-header, .dashboard-header { background: #ffd966; padding: 1.5rem; text-align: center; }
+        .login-header h2, .dashboard-header h2 { color: #1e3b4a; font-weight: 800; margin-top: 0.5rem; }
+        .login-body { padding: 2rem; }
+        .login-body input { width: 100%; padding: 0.8rem 1rem; margin-bottom: 1rem; border: 1px solid #cde0e8; border-radius: 1rem; font-size: 1rem; }
+        .login-body input:focus { outline: none; border-color: #ffaa33; box-shadow: 0 0 0 3px rgba(255,170,51,0.2); }
+        .login-body button { width: 100%; background: #0b5e7c; color: white; border: none; padding: 0.8rem; border-radius: 2rem; font-weight: 600; font-size: 1rem; cursor: pointer; transition: 0.2s; }
+        .login-body button:hover { background: #ffaa33; color: #1e3b4a; }
+        .toggle-link { text-align: center; margin-top: 1rem; color: #0b5e7c; cursor: pointer; font-size: 0.85rem; text-decoration: underline; }
+        .msg { text-align: center; margin-top: 0.5rem; font-size: 0.8rem; }
+        .dashboard-container { display: none; background: white; }
+        .user-info { display: flex; justify-content: flex-end; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+        .logout-btn { background: #c0392b; padding: 0.3rem 1rem; border-radius: 2rem; font-size: 0.8rem; cursor: pointer; color: white; font-weight: 500; }
+        .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
+        .card { background: white; border-radius: 1.5rem; overflow: hidden; border: 1px solid #e2edf2; box-shadow: 0 5px 15px rgba(0,0,0,0.05); transition: transform 0.2s; }
+        .card:hover { transform: translateY(-5px); }
+        .card-header { background: #f0f7fa; padding: 1rem; display: flex; align-items: center; gap: 0.8rem; border-bottom: 2px solid #ffaa33; }
+        .card-header i { font-size: 1.8rem; color: #0b5e7c; }
+        .card-header h3 { color: #0b5e7c; }
+        .card-body { padding: 1rem; }
+        .card-body p { color: #2c6979; margin-bottom: 1rem; font-size: 0.9rem; }
+        .btn-group { display: flex; gap: 0.6rem; flex-wrap: wrap; margin: 0.8rem 0; }
+        .btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.4rem 1rem; border-radius: 2rem; text-decoration: none; font-weight: 600; font-size: 0.8rem; transition: 0.2s; }
+        .btn-primary { background: #0b5e7c; color: white; }
+        .btn-primary:hover { background: #ffaa33; color: #1e3b4a; }
+        .btn-secondary { background: #e2edf2; color: #1e3b4a; }
+        .btn-secondary:hover { background: #cde0e8; }
+        .footer { text-align: center; margin-top: 2rem; font-size: 0.7rem; color: #2c6979; }
+        .social-links { display: flex; justify-content: center; gap: 1.2rem; margin-bottom: 0.5rem; }
+        .social-links a { color: #0b5e7c; font-size: 1.2rem; }
+        .social-links a:hover { color: #ffaa33; }
+        @media (max-width: 700px) { .cards-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
-    <h1>FGV Concursos TI</h1>
-    <div class="cards">
-        <div class="card"><h3>Cientista de Dados</h3><a href="cientista-de-dados/simulado.html">Simulado</a> <a href="cientista-de-dados/ebook.html">E-book</a></div>
-        <div class="card"><h3>Engenheiro de Dados</h3><a href="engenheiro-de-dados/simulado.html">Simulado</a> <a href="engenheiro-de-dados/ebook.html">E-book</a></div>
-        <div class="card"><h3>Analista de Segurança</h3><a href="analista-seguranca/simulado.html">Simulado</a> <a href="analista-seguranca/ebook.html">E-book</a></div>
-        <div class="card"><h3>Analista de Infraestrutura</h3><a href="analista-infraestrutura/simulado.html">Simulado</a> <a href="analista-infraestrutura/ebook.html">E-book</a></div>
-        <div class="card"><h3>Analista de Sistemas</h3><a href="analista-sistemas/simulado.html">Simulado</a> <a href="analista-sistemas/ebook.html">E-book</a></div>
-        <div class="card"><h3>Analista de UX</h3><a href="analista-ux/simulado.html">Simulado</a> <a href="analista-ux/ebook.html">E-book</a></div>
+<div id="authContainer" style="width:100%; display:flex; justify-content:center; align-items:center;">
+    <div class="login-card">
+        <div class="login-header">
+            <i class="fab fa-youtube fa-4x" style="color:#c0392b;"></i>
+            <h2>@EstudandoTI_Brasil</h2>
+            <p>Simulados FGV para concursos de TI</p>
+        </div>
+        <div class="login-body">
+            <div id="loginSection">
+                <input type="email" id="loginEmail" placeholder="E-mail" autocomplete="email">
+                <input type="password" id="loginSenha" placeholder="Senha">
+                <button id="loginBtn">Entrar</button>
+                <div class="toggle-link" id="showRegister">Não tem conta? Cadastre-se</div>
+                <div id="authMsg" class="msg" style="color:red;"></div>
+            </div>
+            <div id="registerSection" style="display:none;">
+                <input type="text" id="regNome" placeholder="Nome completo">
+                <input type="email" id="regEmail" placeholder="E-mail">
+                <input type="password" id="regSenha" placeholder="Senha">
+                <button id="registerBtn">Cadastrar</button>
+                <div class="toggle-link" id="showLogin">Já tem conta? Faça login</div>
+                <div id="regMsg" class="msg" style="color:red;"></div>
+            </div>
+        </div>
     </div>
-    <footer>@EstudandoTI_Brasil</footer>
+</div>
+
+<div id="dashboard" class="dashboard-container">
+    <div class="dashboard-header">
+        <i class="fab fa-youtube fa-2x" style="color:#c0392b;"></i>
+        <h2>Escolha sua área de estudo</h2>
+        <div class="user-info"><span id="userNameDisplay"></span><span class="logout-btn" id="logoutBtn">Sair</span></div>
+    </div>
+    <div class="cards-grid">
+        <div class="card"><div class="card-header"><i class="fas fa-brain"></i><h3>Cientista de Dados</h3></div><div class="card-body"><p>ML, estatística, deep learning, SQL, DW/BI, geoprocessamento, IA generativa.</p><div class="btn-group"><a href="cientista-de-dados/simulado.html" class="btn btn-primary"><i class="fas fa-play"></i> Simulado</a><a href="cientista-de-dados/ebook_cientista_dados.pdf" class="btn btn-secondary"><i class="fas fa-book"></i> E-book</a></div></div></div>
+        <div class="card"><div class="card-header"><i class="fas fa-database"></i><h3>Engenheiro de Dados</h3></div><div class="card-body"><p>Modelagem, SQL, NoSQL, DW/BI, cloud, orquestração, governança.</p><div class="btn-group"><a href="engenheiro-de-dados/simulado.html" class="btn btn-primary"><i class="fas fa-play"></i> Simulado</a><a href="engenheiro-de-dados/ebook_Engenheiro de Dados.pdf" class="btn btn-secondary"><i class="fas fa-book"></i> E-book</a></div></div></div>
+        <div class="card"><div class="card-header"><i class="fas fa-shield-alt"></i><h3>Analista de Segurança</h3></div><div class="card-body"><p>LGPD, IAM, firewalls, DevSecOps, criptografia, resposta a incidentes, SIEM.</p><div class="btn-group"><a href="analista-seguranca/simulado.html" class="btn btn-primary"><i class="fas fa-play"></i> Simulado</a><a href="analista-seguranca/ebook_Analista de Segurança da Informação.pdf" class="btn btn-secondary"><i class="fas fa-book"></i> E-book</a></div></div></div>
+        <div class="card"><div class="card-header"><i class="fas fa-server"></i><h3>Analista de Infraestrutura</h3></div><div class="card-body"><p>Data centers, virtualização, containers, redes, storage, cloud.</p><div class="btn-group"><a href="analista-infraestrutura/simulado.html" class="btn btn-primary"><i class="fas fa-play"></i> Simulado</a><a href="analista-infraestrutura/ebook_Analista de Infraestrutura.pdf" class="btn btn-secondary"><i class="fas fa-book"></i> E-book</a></div></div></div>
+        <div class="card"><div class="card-header"><i class="fas fa-code"></i><h3>Analista de Sistemas</h3></div><div class="card-body"><p>Arquitetura, Java/Spring, front-end, testes, DevOps, containers.</p><div class="btn-group"><a href="analista-sistemas/simulado.html" class="btn btn-primary"><i class="fas fa-play"></i> Simulado</a><a href="analista-sistemas/ebook_Analista de Sistemas.pdf" class="btn btn-secondary"><i class="fas fa-book"></i> E-book</a></div></div></div>
+        <div class="card"><div class="card-header"><i class="fas fa-palette"></i><h3>Analista de UX</h3></div><div class="card-body"><p>Design centrado, heurísticas, prototipação, pesquisa, acessibilidade, UX writing.</p><div class="btn-group"><a href="analista-ux/simulado.html" class="btn btn-primary"><i class="fas fa-play"></i> Simulado</a><a href="analista-ux/ebook_UX.pdf" class="btn btn-secondary"><i class="fas fa-book"></i> E-book</a></div></div></div>
+    </div>
+    <div class="footer"><div class="social-links"><a href="https://www.youtube.com/@EstudandoTI_Brasil" target="_blank"><i class="fab fa-youtube"></i></a><a href="https://www.tiktok.com/@trilha_dos_saberes" target="_blank"><i class="fab fa-tiktok"></i></a><a href="https://www.instagram.com/marcoa_siqueira/" target="_blank"><i class="fab fa-instagram"></i></a></div><p>@EstudandoTI_Brasil • Simulados para concursos • Acertando 70% você leva o PDF grátis!</p></div>
+</div>
+
+<script>
+    // ========== GERENCIAMENTO DE USUÁRIOS (LOCALSTORAGE) ==========
+    function inicializarUsuarios() {
+        let usuarios = JSON.parse(localStorage.getItem('usuarios_sistema') || '[]');
+        if (usuarios.length === 0) {
+            usuarios = [
+                { id: 1, nome: "Ana Carolina", email: "ana@teste.com", senha: "123", pontos: 98, ativo: true, downloadsRestantes: 3 },
+                { id: 2, nome: "Bruno Lima", email: "bruno@teste.com", senha: "123", pontos: 95, ativo: true, downloadsRestantes: 3 },
+                { id: 3, nome: "Carla Mendes", email: "carla@teste.com", senha: "123", pontos: 92, ativo: true, downloadsRestantes: 3 },
+                { id: 4, nome: "Daniel Costa", email: "daniel@teste.com", senha: "123", pontos: 88, ativo: true, downloadsRestantes: 3 },
+                { id: 5, nome: "Elisa Souza", email: "elisa@teste.com", senha: "123", pontos: 85, ativo: true, downloadsRestantes: 3 },
+                { id: 6, nome: "Felipe Rocha", email: "felipe@teste.com", senha: "123", pontos: 82, ativo: true, downloadsRestantes: 3 },
+                { id: 7, nome: "Gabriela Alves", email: "gabi@teste.com", senha: "123", pontos: 79, ativo: true, downloadsRestantes: 3 },
+                { id: 8, nome: "Henrique Dias", email: "henrique@teste.com", senha: "123", pontos: 76, ativo: true, downloadsRestantes: 3 },
+                { id: 9, nome: "Isabela Faria", email: "isa@teste.com", senha: "123", pontos: 73, ativo: true, downloadsRestantes: 3 },
+                { id: 10, nome: "João Pedro", email: "joao@teste.com", senha: "123", pontos: 70, ativo: true, downloadsRestantes: 3 },
+                { id: 11, nome: "Administrador", email: "admin@admin.com", senha: "admin123", pontos: 0, ativo: true, isAdmin: true, downloadsRestantes: 3 }
+            ];
+            localStorage.setItem('usuarios_sistema', JSON.stringify(usuarios));
+        } else {
+            let modified = false;
+            usuarios = usuarios.map(u => {
+                if (u.downloadsRestantes === undefined) { u.downloadsRestantes = 3; modified = true; }
+                if (u.senha === undefined) { u.senha = "123"; modified = true; }
+                return u;
+            });
+            const adminExists = usuarios.some(u => u.email === 'admin@admin.com');
+            if (!adminExists) {
+                const newId = Math.max(...usuarios.map(u => u.id), 0) + 1;
+                usuarios.push({ id: newId, nome: "Administrador", email: "admin@admin.com", senha: "admin123", pontos: 0, ativo: true, isAdmin: true, downloadsRestantes: 3 });
+                modified = true;
+            }
+            if (modified) localStorage.setItem('usuarios_sistema', JSON.stringify(usuarios));
+        }
+    }
+    function getUsuarios() { return JSON.parse(localStorage.getItem('usuarios_sistema') || '[]'); }
+    function saveUsuarios(usuarios) { localStorage.setItem('usuarios_sistema', JSON.stringify(usuarios)); }
+    function adicionarUsuario(nome, email, senha, pontos = 0) {
+        const usuarios = getUsuarios();
+        const novoId = usuarios.length ? Math.max(...usuarios.map(u=>u.id)) + 1 : 1;
+        usuarios.push({ id: novoId, nome, email, senha, pontos, ativo: true, downloadsRestantes: 3 });
+        saveUsuarios(usuarios);
+        return usuarios;
+    }
+    function autenticar(email, senha) {
+        const usuarios = getUsuarios();
+        return usuarios.find(u => u.email === email && u.senha === senha && u.ativo);
+    }
+    let usuarioLogado = null;
+
+    function mostrarLogin() {
+        document.getElementById('loginSection').style.display = 'block';
+        document.getElementById('registerSection').style.display = 'none';
+    }
+    function mostrarRegistro() {
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('registerSection').style.display = 'block';
+    }
+    function fazerLogin() {
+        const email = document.getElementById('loginEmail').value.trim();
+        const senha = document.getElementById('loginSenha').value;
+        const user = autenticar(email, senha);
+        if(user) {
+            usuarioLogado = user;
+            localStorage.setItem('usuarioLogado', JSON.stringify({ id: user.id, nome: user.nome, email: user.email, pontos: user.pontos, downloadsRestantes: user.downloadsRestantes }));
+            document.getElementById('authContainer').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            document.getElementById('userNameDisplay').innerText = `Olá, ${user.nome}`;
+        } else {
+            document.getElementById('authMsg').innerText = 'E-mail ou senha inválidos.';
+        }
+    }
+    function fazerCadastro() {
+        const nome = document.getElementById('regNome').value.trim();
+        const email = document.getElementById('regEmail').value.trim();
+        const senha = document.getElementById('regSenha').value;
+        if(!nome || !email || !senha) {
+            document.getElementById('regMsg').innerText = 'Preencha todos os campos.';
+            return;
+        }
+        const usuarios = getUsuarios();
+        if(usuarios.find(u => u.email === email)) {
+            document.getElementById('regMsg').innerText = 'E-mail já cadastrado.';
+            return;
+        }
+        adicionarUsuario(nome, email, senha, 0);
+        document.getElementById('regMsg').innerText = 'Cadastro realizado! Faça login.';
+        setTimeout(() => mostrarLogin(), 1500);
+    }
+    function logout() {
+        localStorage.removeItem('usuarioLogado');
+        location.reload();
+    }
+
+    inicializarUsuarios();
+    const usuarioSalvo = localStorage.getItem('usuarioLogado');
+    if(usuarioSalvo) {
+        const userData = JSON.parse(usuarioSalvo);
+        const user = getUsuarios().find(u => u.id === userData.id && u.ativo);
+        if(user) {
+            usuarioLogado = user;
+            document.getElementById('authContainer').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            document.getElementById('userNameDisplay').innerText = `Olá, ${user.nome}`;
+        } else {
+            localStorage.removeItem('usuarioLogado');
+            mostrarLogin();
+        }
+    } else {
+        mostrarLogin();
+    }
+
+    document.getElementById('showRegister')?.addEventListener('click', mostrarRegistro);
+    document.getElementById('showLogin')?.addEventListener('click', mostrarLogin);
+    document.getElementById('loginBtn')?.addEventListener('click', fazerLogin);
+    document.getElementById('registerBtn')?.addEventListener('click', fazerCadastro);
+    document.getElementById('logoutBtn')?.addEventListener('click', logout);
+</script>
 </body>
 </html>
