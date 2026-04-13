@@ -688,45 +688,22 @@
     });
 
     // ==================== INICIALIZAÇÃO ====================
-    (async () => {
-        await inicializarDadosPadrao();
+   function iniciarApp() {
+    inicializarDadosPadrao().then(() => {
         const savedUser = localStorage.getItem('usuarioLogado');
         if (savedUser) {
             const data = JSON.parse(savedUser);
-            const user = await db.usuarios.get(data.id);
-            if (user && user.ativo !== false) {
-                currentUser = user;
-                await renderDashboard();
-                showScreen('dashboardScreen');
-            } else {
-                showScreen('loginScreen');
-            }
+            db.usuarios.get(data.id).then(user => {
+                if (user) {
+                    currentUser = user;
+                    renderDashboard().then(() => showScreen('dashboardScreen'));
+                } else {
+                    showScreen('loginScreen');
+                }
+            });
         } else {
             showScreen('loginScreen');
         }
-    })();
-
-    document.getElementById('loginBtn').addEventListener('click', fazerLogin);
-    document.getElementById('registerBtn').addEventListener('click', fazerCadastro);
-    document.getElementById('showRegister').addEventListener('click', () => {
-        document.getElementById('loginSection').style.display = 'none';
-        document.getElementById('registerSection').style.display = 'block';
     });
-    document.getElementById('showLogin').addEventListener('click', () => {
-        document.getElementById('loginSection').style.display = 'block';
-        document.getElementById('registerSection').style.display = 'none';
-    });
-    document.getElementById('logoutBtn').addEventListener('click', logout);
-    document.getElementById('adminPanelBtn').addEventListener('click', async () => {
-        await renderAdminPanel();
-        showScreen('adminScreen');
-    });
-    document.getElementById('backFromAdmin').addEventListener('click', () => showScreen('dashboardScreen'));
-    document.getElementById('backToDashboard').addEventListener('click', () => {
-        if (timerInterval) clearInterval(timerInterval);
-        showScreen('dashboardScreen');
-        atualizarRanking();
-    });
-</script>
-</body>
-</html>
+}
+iniciarApp();
