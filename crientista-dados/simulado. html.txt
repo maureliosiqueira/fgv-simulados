@@ -61,8 +61,38 @@
     <div id="resultsPanel" class="results"></div>
     <footer>100 questões estilo FGV • Correção automática • @EstudandoTI_Brasil</footer>
 </div>
+
 <script>
-    // ========== 100 QUESTÕES ==========
+    // ========== 1. INTEGRAÇÃO COM O SISTEMA DE LOGIN (CORRIGIDA) ==========
+    function obterUsuarioLogado() {
+        const userData = JSON.parse(localStorage.getItem('usuarioLogado'));
+        if (!userData) return null;
+        const usuarios = JSON.parse(localStorage.getItem('usuarios_sistema') || '[]');
+        return usuarios.find(u => u.id === userData.id && u.ativo) || null;
+    }
+
+    function atualizarUsuario(novoUsuario) {
+        let usuarios = JSON.parse(localStorage.getItem('usuarios_sistema') || '[]');
+        const index = usuarios.findIndex(u => u.id === novoUsuario.id);
+        if (index !== -1) usuarios[index] = novoUsuario;
+        else usuarios.push(novoUsuario);
+        localStorage.setItem('usuarios_sistema', JSON.stringify(usuarios));
+        localStorage.setItem('usuarioLogado', JSON.stringify({
+            id: novoUsuario.id,
+            nome: novoUsuario.nome,
+            email: novoUsuario.email,
+            pontos: novoUsuario.pontos,
+            downloadsRestantes: novoUsuario.downloadsRestantes
+        }));
+    }
+
+    const usuario = obterUsuarioLogado();
+    if (!usuario) {
+        alert("Você precisa estar logado para acessar o simulado.");
+        window.location.href = "../index.html"; // ajuste se necessário
+    }
+
+    // ========== 2. QUESTÕES (100, COM BASE NO SEU MODELO) ==========
     const questionsData = [
         { text: "Em regressão linear simples, a soma dos resíduos é sempre igual a:", options: ["A) Zero", "B) Um", "C) Variância dos erros", "D) Média dos valores previstos", "E) Coeficiente angular"], correct: 0 },
         { text: "Sobre overfitting, assinale a alternativa correta:", options: ["A) Ocorre quando o modelo é muito simples", "B) Acontece quando o modelo tem alta variância e baixo viés", "C) É mitigado aumentando a complexidade", "D) Não afeta generalização", "E) Reduz acurácia no treino"], correct: 1 },
@@ -75,7 +105,6 @@
         { text: "A Lei nº 14.133/2021 trata de:", options: ["A) Proteção de dados", "B) Licitações e contratos administrativos", "C) Direitos autorais", "D) Marco Civil da Internet", "E) LGPD"], correct: 1 },
         { text: "No Kubernetes, um Deployment gerencia:", options: ["A) Configurações de rede", "B) Replicação e rollout de Pods", "C) Volumes persistentes", "D) Ingress", "E) Service Mesh"], correct: 1 }
     ];
-    // Gerar mais 90 questões (tópicos variados)
     const topics = ["Regressão Logística","Árvores","SVM","Naive Bayes","K-NN","Ensembles","Validação Cruzada","Otimização","Métricas","K-means","Regras de Associação","t-SNE","Redes Neurais","BatchNorm","ReLU","Softmax","Backpropagation","TensorFlow","PyTorch","Distribuição Normal","Poisson","Autovalores","SVD","Normas","Intervalo de Confiança","Correlação","ANOVA","Bayes","ggplot2","Power BI","Storytelling","SQL","Normalização","Triggers","Views","ETL","OLAP","Geopandas","Scrum","PMBOK","Kanban","IA Generativa","LLM","Embeddings","LGPD","Ética","Data Warehouse","Star Schema","Data Lake","Lambda","Kappa","Airflow","Spark","Kafka","MongoDB","Redis","Cassandra","Prometheus","Grafana","ELK","AWS S3","BigQuery","REST","GraphQL","OAuth2","JWT","Docker","Terraform","Ansible","CI/CD","Jenkins"];
     for (let i = questionsData.length; i < 100; i++) {
         let tema = topics[i % topics.length];
@@ -87,38 +116,224 @@
         else if (tema === "Normalização") { texto = "A 3FN elimina:"; opcoes = ["A) dependência parcial","B) dependência transitiva","C) grupos repetitivos","D) tabelas temporárias","E) chaves estrangeiras"]; correta=1; }
         questionsData.push({ text: texto, options: opcoes, correct: correta });
     }
-    // Lógica do simulado
+
+    // ========== 3. ESTADO DO SIMULADO COM PERSISTÊNCIA ==========
     let userAnswers = new Array(100).fill(null);
-    let currentIndex = 0, timerSeconds = 4*3600, timerInterval, submitted = false;
-    const qPanel = document.getElementById('questionsPanel'), navGrid = document.getElementById('navGrid');
-    const timerDisp = document.getElementById('timerDisplay'), progressFill = document.getElementById('progressFill');
-    const prevBtn = document.getElementById('prevBtn'), nextBtn = document.getElementById('nextBtn'), submitBtn = document.getElementById('submitBtn');
+    let currentIndex = 0;
+    let timerSeconds = 4 * 3600; // 4 horas
+    let timerInterval;
+    let submitted = false;
+    const STORAGE_KEY = `simulado_cientista_${usuario.id}`;
+
+    function salvarProgresso() {
+        if (!submitted) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                answers: userAnswers,
+                timerSeconds: timerSeconds,
+                currentIndex: currentIndex
+            }));
+        }
+    }
+
+    function carregarProgresso() {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            try {
+                const data = JSON.parse(saved);
+                userAnswers = data.answers || userAnswers;
+                timerSeconds = data.timerSeconds ?? (4*3600);
+                currentIndex = data.currentIndex ?? 0;
+            } catch(e) {}
+        }
+    }
+
+    // ========== 4. FUNÇÕES DE RENDERIZAÇÃO E TIMER ==========
+    const qPanel = document.getElementById('questionsPanel');
+    const navGrid = document.getElementById('navGrid');
+    const timerDisp = document.getElementById('timerDisplay');
+    const progressFill = document.getElementById('progressFill');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const submitBtn = document.getElementById('submitBtn');
     const resultsPanel = document.getElementById('resultsPanel');
-    function formatTime(s){ let h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sec=s%60; return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`; }
-    function updateTimer(){ if(timerSeconds<=0 && !submitted){ clearInterval(timerInterval); alert("Tempo esgotado!"); submitSimulated(); } else { timerSeconds--; timerDisp.innerText=formatTime(timerSeconds); } }
-    function renderCurrentQuestion(){
-        const q=questionsData[currentIndex], ans=userAnswers[currentIndex];
-        const optsHtml = q.options.map((opt,idx)=>`<li><input type="radio" name="q${currentIndex}" value="${idx}" id="q${currentIndex}_${idx}" ${ans===idx?'checked':''}><label for="q${currentIndex}_${idx}">${opt}</label></li>`).join('');
-        qPanel.innerHTML=`<div class="question-card"><div class="question-text">${currentIndex+1}. ${q.text}</div><ul class="options">${optsHtml}</ul></div>`;
-        document.querySelectorAll(`input[name="q${currentIndex}"]`).forEach(r=>r.addEventListener('change',e=>{ userAnswers[currentIndex]=parseInt(e.target.value); updateNavButtons(); updateProgress(); }));
+
+    function formatTime(s) {
+        let h = Math.floor(s / 3600);
+        let m = Math.floor((s % 3600) / 60);
+        let sec = s % 60;
+        return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`;
     }
-    function updateNavButtons(){ document.querySelectorAll('.nav-btn').forEach((btn,idx)=>{ if(userAnswers[idx]!==null) btn.classList.add('answered'); else btn.classList.remove('answered'); if(idx===currentIndex) btn.classList.add('current'); else btn.classList.remove('current'); }); updateProgress(); }
-    function renderNavGrid(){ let html=''; for(let i=0;i<100;i++) html+=`<button class="nav-btn ${userAnswers[i]!==null?'answered':''}" data-idx="${i}">${i+1}</button>`; navGrid.innerHTML=html; document.querySelectorAll('.nav-btn').forEach(btn=>btn.addEventListener('click',e=>{ currentIndex=parseInt(btn.getAttribute('data-idx')); renderCurrentQuestion(); updateNavButtons(); })); updateNavButtons(); }
-    function updateProgress(){ const answeredCount=userAnswers.filter(a=>a!==null).length; progressFill.style.width=`${(answeredCount/100)*100}%`; }
-    function submitSimulated(){
-        if(submitted) return; clearInterval(timerInterval);
-        let correctCount=0; for(let i=0;i<100;i++) if(userAnswers[i]!==null && userAnswers[i]===questionsData[i].correct) correctCount++;
-        const percent=(correctCount/100)*100;
-        resultsPanel.style.display='block';
-        let pdfBtn='';
-        if(percent>=70) pdfBtn=`<button id="downloadPdfBtn" style="background:#2c8fbb; margin-top:1rem;"><i class="fas fa-download"></i> 📥 Baixar PDF (E-book)</button>`;
-        else pdfBtn=`<p style="color:#c0392b;">🔒 Você atingiu ${percent.toFixed(1)}% (mínimo 70% para baixar o PDF).</p>`;
-        resultsPanel.innerHTML=`<h3>Resultado Final</h3><div class="score">${correctCount}/100 (${percent.toFixed(1)}%)</div><p>Você respondeu ${userAnswers.filter(a=>a!==null).length} questões.</p>${pdfBtn}<button id="restartBtn" style="margin-top:1rem;"><i class="fas fa-sync-alt"></i> Refazer Simulado</button>`;
-        document.getElementById('restartBtn')?.addEventListener('click',()=>location.reload());
-        if(percent>=70) document.getElementById('downloadPdfBtn')?.addEventListener('click',()=>{ window.open('ebook.html','_blank'); });
-        submitted=true; submitBtn.disabled=true; submitBtn.style.opacity=0.6;
+
+    function updateTimer() {
+        if (submitted) return;
+        if (timerSeconds <= 0) {
+            clearInterval(timerInterval);
+            alert("Tempo esgotado! Finalizando simulado.");
+            submitSimulated();
+        } else {
+            timerSeconds--;
+            timerDisp.innerText = formatTime(timerSeconds);
+            salvarProgresso();
+        }
     }
-    function init(){ renderNavGrid(); renderCurrentQuestion(); timerInterval=setInterval(updateTimer,1000); prevBtn.onclick=()=>{ if(currentIndex>0){ currentIndex--; renderCurrentQuestion(); updateNavButtons(); } }; nextBtn.onclick=()=>{ if(currentIndex<99){ currentIndex++; renderCurrentQuestion(); updateNavButtons(); } }; submitBtn.onclick=()=>{ if(confirm("Finalizar simulado?")) submitSimulated(); }; }
+
+    function renderCurrentQuestion() {
+        const q = questionsData[currentIndex];
+        const ans = userAnswers[currentIndex];
+        const optsHtml = q.options.map((opt, idx) => `
+            <li>
+                <input type="radio" name="q${currentIndex}" value="${idx}" id="q${currentIndex}_${idx}" ${ans === idx ? 'checked' : ''}>
+                <label for="q${currentIndex}_${idx}">${opt}</label>
+            </li>
+        `).join('');
+        qPanel.innerHTML = `
+            <div class="question-card">
+                <div class="question-text">${currentIndex+1}. ${q.text}</div>
+                <ul class="options">${optsHtml}</ul>
+            </div>
+        `;
+        document.querySelectorAll(`input[name="q${currentIndex}"]`).forEach(r => {
+            r.addEventListener('change', (e) => {
+                userAnswers[currentIndex] = parseInt(e.target.value);
+                updateNavButtons();
+                updateProgress();
+                salvarProgresso();
+            });
+        });
+    }
+
+    function updateNavButtons() {
+        const btns = document.querySelectorAll('.nav-btn');
+        btns.forEach((btn, idx) => {
+            if (userAnswers[idx] !== null) btn.classList.add('answered');
+            else btn.classList.remove('answered');
+            if (idx === currentIndex) btn.classList.add('current');
+            else btn.classList.remove('current');
+        });
+        updateProgress();
+    }
+
+    function renderNavGrid() {
+        let html = '';
+        for (let i = 0; i < 100; i++) {
+            html += `<button class="nav-btn ${userAnswers[i] !== null ? 'answered' : ''}" data-idx="${i}">${i+1}</button>`;
+        }
+        navGrid.innerHTML = html;
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                currentIndex = parseInt(btn.getAttribute('data-idx'));
+                renderCurrentQuestion();
+                updateNavButtons();
+                salvarProgresso();
+            });
+        });
+        updateNavButtons();
+    }
+
+    function updateProgress() {
+        const answeredCount = userAnswers.filter(a => a !== null).length;
+        const percent = (answeredCount / 100) * 100;
+        progressFill.style.width = `${percent}%`;
+    }
+
+    // ========== 5. FINALIZAÇÃO E LIBERAÇÃO DO PDF ==========
+    function submitSimulated() {
+        if (submitted) return;
+        clearInterval(timerInterval);
+        submitted = true;
+
+        let correctCount = 0;
+        for (let i = 0; i < 100; i++) {
+            if (userAnswers[i] !== null && userAnswers[i] === questionsData[i].correct) correctCount++;
+        }
+        const percent = (correctCount / 100) * 100;
+        const pontosGanhos = Math.floor(percent);
+
+        // Atualiza pontos e downloads do usuário
+        if (pontosGanhos > 0) {
+            usuario.pontos = (usuario.pontos || 0) + pontosGanhos;
+            atualizarUsuario(usuario);
+        }
+
+        resultsPanel.style.display = 'block';
+        let pdfBtn = '';
+        if (percent >= 70) {
+            if (usuario.downloadsRestantes > 0) {
+                pdfBtn = `<button id="downloadPdfBtn" style="background:#28a745; margin-top:1rem;"><i class="fas fa-download"></i> 📥 Baixar E-book (restam ${usuario.downloadsRestantes} download(s))</button>`;
+            } else {
+                pdfBtn = `<p style="color:#c0392b;">⚠️ Você atingiu 70%, mas não tem mais downloads disponíveis.</p>`;
+            }
+        } else {
+            pdfBtn = `<p style="color:#c0392b;">🔒 Você atingiu ${percent.toFixed(1)}% (mínimo 70% para baixar o PDF).</p>`;
+        }
+
+        resultsPanel.innerHTML = `
+            <h3>Resultado Final</h3>
+            <div class="score">${correctCount}/100 (${percent.toFixed(1)}%)</div>
+            <p>Você respondeu ${userAnswers.filter(a => a !== null).length} questões.</p>
+            <p>+${pontosGanhos} pontos adicionados.</p>
+            ${pdfBtn}
+            <button id="restartBtn" style="margin-top:1rem;"><i class="fas fa-sync-alt"></i> Refazer Simulado</button>
+        `;
+
+        const restartBtn = document.getElementById('restartBtn');
+        if (restartBtn) {
+            restartBtn.addEventListener('click', () => {
+                localStorage.removeItem(STORAGE_KEY);
+                location.reload();
+            });
+        }
+
+        if (percent >= 70 && usuario.downloadsRestantes > 0) {
+            const downloadBtn = document.getElementById('downloadPdfBtn');
+            if (downloadBtn) {
+                downloadBtn.addEventListener('click', () => {
+                    if (usuario.downloadsRestantes > 0) {
+                        usuario.downloadsRestantes--;
+                        atualizarUsuario(usuario);
+                        alert(`Download liberado! Restam ${usuario.downloadsRestantes} downloads.`);
+                        // Abre o PDF correto (na mesma pasta)
+                        window.open('ebook-cientista-dados.pdf', '_blank');
+                    } else {
+                        alert("Você não possui mais downloads disponíveis.");
+                    }
+                });
+            }
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.6';
+        localStorage.removeItem(STORAGE_KEY); // limpa progresso após finalizar
+    }
+
+    // ========== 6. INICIALIZAÇÃO ==========
+    function init() {
+        carregarProgresso();
+        renderNavGrid();
+        renderCurrentQuestion();
+        timerInterval = setInterval(updateTimer, 1000);
+        timerDisp.innerText = formatTime(timerSeconds);
+        prevBtn.onclick = () => {
+            if (currentIndex > 0 && !submitted) {
+                currentIndex--;
+                renderCurrentQuestion();
+                updateNavButtons();
+                salvarProgresso();
+            }
+        };
+        nextBtn.onclick = () => {
+            if (currentIndex < 99 && !submitted) {
+                currentIndex++;
+                renderCurrentQuestion();
+                updateNavButtons();
+                salvarProgresso();
+            }
+        };
+        submitBtn.onclick = () => {
+            if (confirm("Finalizar simulado?")) submitSimulated();
+        };
+    }
+
     init();
 </script>
 </body>
