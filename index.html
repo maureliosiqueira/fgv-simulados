@@ -8,7 +8,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://unpkg.com/dexie@3.2.4/dist/dexie.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
+        /* Estilos (mesmos da versão anterior - vou reutilizar os que já estavam funcionando) */
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0b2b44 0%, #1b5e7a 100%); min-height: 100vh; padding: 1rem; }
         .screen { max-width: 1400px; margin: 0 auto; background: white; border-radius: 2rem; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: none; }
@@ -26,6 +30,7 @@
         .logout-btn, .admin-btn, .change-pwd-btn { background: #c0392b; padding: 0.3rem 1rem; border-radius: 2rem; font-size: 0.8rem; cursor: pointer; color: white; font-weight: 500; }
         .admin-btn { background: #2c8fbb; }
         .change-pwd-btn { background: #0b5e7c; }
+        .certificado-btn { background: #8e44ad; }
         .two-columns { display: flex; flex-wrap: wrap; gap: 2rem; padding: 2rem; }
         .ranking-panel { flex: 1; min-width: 280px; background: #f8fbfd; border-radius: 1.5rem; padding: 1.5rem; }
         .ranking-panel h3 { margin-bottom: 1rem; color: #0b5e7c; }
@@ -97,6 +102,7 @@
         .tab-btn.active { background: #ffaa33; color: #1e3b4a; border-radius: 2rem; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
+        .certificado-preview { background: #f8fbfd; border: 1px solid #ddd; border-radius: 1rem; padding: 1rem; margin-top: 1rem; text-align: center; font-size: 0.8rem; }
         @media (max-width:800px) { .simulator-content { flex-direction: column; } .nav-panel { position: static; } .two-columns { flex-direction: column; } }
     </style>
 </head>
@@ -145,6 +151,7 @@
             <span id="userNameDisplay"></span>
             <span class="change-pwd-btn" id="changePwdBtn"><i class="fas fa-key"></i> Alterar senha</span>
             <span class="admin-btn" id="adminPanelBtn" style="display:none;"><i class="fas fa-users-cog"></i> Admin</span>
+            <span class="btn certificado-btn" id="certificadoBtn" style="display:none;"><i class="fas fa-certificate"></i> Meu Certificado</span>
             <span class="logout-btn" id="logoutBtn">Sair</span>
         </div>
     </div>
@@ -186,7 +193,6 @@
             <button class="tab-btn active" data-tab="usuarios">Usuários</button>
             <button class="tab-btn" data-tab="quizzes">Gerenciar Quizzes</button>
         </div>
-        <!-- Aba Usuários -->
         <div id="tabUsuarios" class="tab-content active">
             <div style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
                 <button id="addUserBtn" class="btn"><i class="fas fa-plus"></i> Novo Usuário</button>
@@ -194,11 +200,10 @@
                 <button id="gerarDadosExemploBtn" class="btn" style="background: #ffaa33; color:#1e3b4a;"><i class="fas fa-dice-d6"></i> Gerar Dados de Exemplo</button>
             </div>
             <table class="admin-table" id="userTable">
-                <thead><tr><th>ID</th><th>Nome</th><th>Email</th><th>Pontos</th><th>Downloads Rest.</th><th>Último Simulado (data)</th><th>Última Pontuação (%)</th><th>Ações</th></tr></thead>
+                <thead><tr><th>ID</th><th>Nome</th><th>Email</th><th>Pontos</th><th>Downloads Rest.</th><th>Último Simulado (data)</th><th>Última Pontuação (%)</th><th>Certificado</th><th>Ações</th></tr></thead>
                 <tbody id="userTableBody"></tbody>
             </table>
         </div>
-        <!-- Aba Gerenciar Quizzes -->
         <div id="tabQuizzes" class="tab-content">
             <button id="addQuizBtn" class="btn" style="margin-bottom:1rem;"><i class="fas fa-plus"></i> Adicionar Quiz</button>
             <table class="admin-table" id="quizTable">
@@ -288,6 +293,20 @@
     </div>
 </div>
 
+<!-- Modal para certificado (solicitar dados) -->
+<div id="certificadoModal" class="modal">
+    <div class="modal-content">
+        <h3>🎓 Solicitar Certificado</h3>
+        <p>Parabéns! Você concluiu todos os 6 módulos. Preencha os dados abaixo para gerar seu certificado.</p>
+        <input type="text" id="certNome" placeholder="Nome completo (como deseja no certificado)" required>
+        <input type="text" id="certRG" placeholder="RG" required>
+        <input type="text" id="certCPF" placeholder="CPF" required>
+        <div class="certificado-preview" id="certPreview"></div>
+        <button id="gerarCertificadoBtn" class="btn">Emitir Certificado</button>
+        <button id="closeCertificadoModal" class="btn btn-secondary">Cancelar</button>
+    </div>
+</div>
+
 <!-- Modal alterar senha -->
 <div id="changePwdModal" class="modal">
     <div class="modal-content">
@@ -296,7 +315,7 @@
         <input type="password" id="newPassword" placeholder="Nova senha">
         <input type="password" id="confirmPassword" placeholder="Confirmar nova senha">
         <button id="confirmChangePwd" class="btn">Salvar</button>
-        <button id="closeModal" class="btn btn-secondary" style="margin-left:0.5rem;">Cancelar</button>
+        <button id="closeModal" class="btn btn-secondary">Cancelar</button>
     </div>
 </div>
 
@@ -304,7 +323,7 @@
     // ==================== INDEXEDDB (DEXIE) ====================
     const db = new Dexie("EstudandoTIDB");
     db.version(1).stores({
-        usuarios: "++id, nome, email, senha, pontos, downloadsRestantes, ultimoSimulado, ultimaPontuacao, isAdmin, badges, historicoPontos",
+        usuarios: "++id, nome, email, senha, pontos, downloadsRestantes, ultimoSimulado, ultimaPontuacao, isAdmin, badges, historicoPontos, simuladosConcluidos, certificadoEmitido, certificadoDados",
         progresso: "&id, respostas, tempoRestante, indiceAtual, modoEstudoAtivo",
         areasConfig: "++id, areaId, disponivel"
     });
@@ -332,9 +351,9 @@
         return db.usuarios.count().then(count => {
             if (count === 0) {
                 return db.usuarios.bulkAdd([
-                    { nome: "Ana Carolina", email: "ana@teste.com", senha: "123", pontos: 76, downloadsRestantes: 3, ultimoSimulado: "2026-04-05T00:00:00.000Z", ultimaPontuacao: 51, isAdmin: false, badges: [], historicoPontos: [{ data: "2026-04-05", pontos: 76 }] },
-                    { nome: "Bruno Lima", email: "bruno@teste.com", senha: "123", pontos: 105, downloadsRestantes: 3, ultimoSimulado: "2026-04-12T00:00:00.000Z", ultimaPontuacao: 70, isAdmin: false, badges: [], historicoPontos: [{ data: "2026-04-12", pontos: 105 }] },
-                    { nome: "Administrador", email: "admin@admin.com", senha: "admin123", pontos: 0, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null, isAdmin: true, badges: [], historicoPontos: [] }
+                    { nome: "Ana Carolina", email: "ana@teste.com", senha: "123", pontos: 76, downloadsRestantes: 3, ultimoSimulado: "2026-04-05T00:00:00.000Z", ultimaPontuacao: 51, isAdmin: false, badges: [], historicoPontos: [{ data: "2026-04-05", pontos: 76 }], simuladosConcluidos: [], certificadoEmitido: false, certificadoDados: null },
+                    { nome: "Bruno Lima", email: "bruno@teste.com", senha: "123", pontos: 105, downloadsRestantes: 3, ultimoSimulado: "2026-04-12T00:00:00.000Z", ultimaPontuacao: 70, isAdmin: false, badges: [], historicoPontos: [{ data: "2026-04-12", pontos: 105 }], simuladosConcluidos: [], certificadoEmitido: false, certificadoDados: null },
+                    { nome: "Administrador", email: "admin@admin.com", senha: "admin123", pontos: 0, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null, isAdmin: true, badges: [], historicoPontos: [], simuladosConcluidos: [], certificadoEmitido: false, certificadoDados: null }
                 ]);
             }
         });
@@ -348,7 +367,7 @@
     function adicionarUsuario(nome, email, senha) {
         return db.usuarios.where({ email }).first().then(existente => {
             if (existente) return false;
-            return db.usuarios.add({ nome, email, senha, pontos: 0, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null, isAdmin: false, badges: [], historicoPontos: [] }).then(() => true);
+            return db.usuarios.add({ nome, email, senha, pontos: 0, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null, isAdmin: false, badges: [], historicoPontos: [], simuladosConcluidos: [], certificadoEmitido: false, certificadoDados: null }).then(() => true);
         });
     }
     function atualizarUsuario(usuarioAtualizado) {
@@ -367,6 +386,99 @@
         return atualizarUsuario(currentUser).then(() => { alert("Senha alterada com sucesso!"); return true; });
     }
 
+    // ==================== CERTIFICADO ====================
+    const areasCertificado = ["cientista-dados", "engenheiro-dados", "analista-seguranca", "analista-infraestrutura", "analista-sistemas", "analista-ux"];
+    function verificarConclusaoCertificado() {
+        if (!currentUser) return false;
+        const concluidos = currentUser.simuladosConcluidos || [];
+        const todasConcluidas = areasCertificado.every(area => concluidos.includes(area));
+        return todasConcluidas;
+    }
+
+    function obterDatasCertificado() {
+        const concluidos = currentUser.simuladosConcluidos || [];
+        // Buscar as datas de conclusão (usando o campo ultimoSimulado de cada área? Vamos usar o histórico de pontos ou uma nova estrutura)
+        // Para simplificar, vou usar a data de primeiro simulado (mais antiga) e a data de último simulado (mais recente)
+        const historico = currentUser.historicoPontos || [];
+        if (historico.length === 0) return { inicio: null, fim: null };
+        const datas = historico.map(h => new Date(h.data)).sort((a,b) => a - b);
+        return { inicio: datas[0], fim: datas[datas.length-1] };
+    }
+
+    function gerarCodigoAutenticidade() {
+        return 'xxxx-xxxx-xxxx-xxxx'.replace(/x/g, () => (Math.random() * 16 | 0).toString(16).toUpperCase());
+    }
+
+    async function emitirCertificado(dados) {
+        if (!verificarConclusaoCertificado()) {
+            alert("Você ainda não concluiu todos os 6 módulos.");
+            return;
+        }
+        if (currentUser.certificadoEmitido) {
+            alert("Você já emitiu seu certificado. Se precisar de outro, contate o administrador.");
+            return;
+        }
+        const { inicio, fim } = obterDatasCertificado();
+        const codigo = gerarCodigoAutenticidade();
+        const certificado = {
+            nome: dados.nome,
+            rg: dados.rg,
+            cpf: dados.cpf,
+            dataInicio: inicio ? inicio.toLocaleDateString() : "---",
+            dataConclusao: fim ? fim.toLocaleDateString() : "---",
+            codigo: codigo,
+            emitidoEm: new Date().toISOString()
+        };
+        await db.usuarios.update(currentUser.id, { certificadoEmitido: true, certificadoDados: certificado });
+        currentUser.certificadoEmitido = true;
+        currentUser.certificadoDados = certificado;
+        return certificado;
+    }
+
+    async function gerarPDFCertificado(certificado) {
+        // Criar um elemento temporário para renderizar o certificado
+        const div = document.createElement('div');
+        div.style.width = '800px';
+        div.style.padding = '40px';
+        div.style.backgroundColor = '#fff';
+        div.style.fontFamily = 'Inter, sans-serif';
+        div.style.border = '10px solid #ffaa33';
+        div.style.borderRadius = '20px';
+        div.style.textAlign = 'center';
+        div.innerHTML = `
+            <div style="margin-bottom:20px;">
+                <i class="fab fa-youtube fa-3x" style="color:#c0392b;"></i>
+                <h1 style="color:#0b5e7c;">EstudandoTI_Brasil</h1>
+                <p style="color:#2c6979;">Certificado de Conclusão</p>
+            </div>
+            <div style="border-top: 2px solid #ffaa33; margin: 20px 0;"></div>
+            <p style="font-size:1.2rem;">Certificamos que</p>
+            <h2 style="margin:20px 0; color:#0b5e7c;">${certificado.nome}</h2>
+            <p>RG: ${certificado.rg} &nbsp;|&nbsp; CPF: ${certificado.cpf}</p>
+            <p>concluiu com êxito todos os 6 módulos do curso de TI para concursos da FGV,</p>
+            <p>no período de <strong>${certificado.dataInicio}</strong> a <strong>${certificado.dataConclusao}</strong>.</p>
+            <div style="margin:30px 0;">
+                <div style="display:inline-block; width:200px; border-top:1px solid #333; margin-top:30px;"></div>
+                <p>${certificado.codigo}</p>
+                <p style="font-size:0.7rem;">Código de autenticidade</p>
+            </div>
+            <p style="font-size:0.7rem; margin-top:20px;">Emitido em: ${new Date(certificado.emitidoEm).toLocaleDateString()}</p>
+            <div style="margin-top:30px;">
+                <i class="fab fa-youtube"></i> @EstudandoTI_Brasil
+            </div>
+        `;
+        document.body.appendChild(div);
+        const canvas = await html2canvas(div, { scale: 2 });
+        document.body.removeChild(div);
+        const imgData = canvas.toDataURL('image/png');
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('landscape', 'mm', 'a4');
+        const imgWidth = 297;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+        pdf.save(`Certificado_${certificado.nome.replace(/ /g, '_')}.pdf`);
+    }
+
     // ==================== CRUD DE QUIZZES ====================
     async function listarQuizzes() { return await db.quizzes.toArray(); }
     async function adicionarQuiz(quiz) { return await db.quizzes.add(quiz); }
@@ -378,7 +490,8 @@
         { id: "primeiro_simulado", nome: "Primeiro Passo", icone: "🎓", descricao: "Concluir o primeiro simulado" },
         { id: "70_porcento", nome: "Aprovado", icone: "🏅", descricao: "Atingir 70% em qualquer simulado" },
         { id: "100_porcento", nome: "Excelência", icone: "🌟", descricao: "Atingir 100% em qualquer simulado" },
-        { id: "cinco_simulados", nome: "Dedicação", icone: "📚", descricao: "Completar 5 simulados" }
+        { id: "cinco_simulados", nome: "Dedicação", icone: "📚", descricao: "Completar 5 simulados" },
+        { id: "certificado", nome: "Mestre", icone: "🏆", descricao: "Emitir certificado de conclusão" }
     ];
 
     function verificarConquistas(usuario, resultadoSimulado) {
@@ -396,6 +509,9 @@
         if (!novasBadges.includes("cinco_simulados")) {
             const totalSimulados = (usuario.historicoPontos || []).length + 1;
             if (totalSimulados >= 5) novasBadges.push("cinco_simulados");
+        }
+        if (!novasBadges.includes("certificado") && usuario.certificadoEmitido) {
+            novasBadges.push("certificado");
         }
         return novasBadges;
     }
@@ -423,12 +539,11 @@
         });
     }
 
-    // ==================== QUIZ DIÁRIO (COM CRIAÇÃO AUTOMÁTICA SE NÃO EXISTIR) ====================
+    // ==================== QUIZ DIÁRIO ====================
     async function obterQuizDoDia() {
         const hoje = new Date().toLocaleDateString('en-CA');
         let quiz = await db.quizzes.where({ data: hoje, ativo: true }).first();
         if (!quiz) {
-            // Cria um quiz padrão automaticamente
             const novoQuiz = {
                 data: hoje,
                 pergunta: "Qual a principal característica do NoSQL?",
@@ -485,7 +600,6 @@
             `;
             return;
         }
-        // Se não respondeu, exibe formulário
         let html = `<p><strong>${quiz.pergunta}</strong></p><div class="quiz-alternativas">`;
         quiz.alternativas.forEach((alt, idx) => {
             html += `<label><input type="radio" name="quizResposta" value="${idx}"> ${alt}</label><br>`;
@@ -520,7 +634,7 @@
         { id: "ingles-tecnico", nome: "Inglês Técnico", icone: "language", pdf: null, disponivel: false }
     ];
 
-    // ==================== GERADOR DE QUESTÕES ====================
+    // ==================== GERADOR DE QUESTÕES (mesmo das versões anteriores) ====================
     function obterQuestoesDaArea(areaId) {
         const topicosPorArea = {
             "cientista-dados": ["Regressão Linear", "Overfitting", "Validação Cruzada", "PCA", "Clusterização", "Redes Neurais", "Árvores de Decisão", "SVM", "Naive Bayes", "Ensemble", "Métricas de Avaliação", "SQL para Análise", "Data Warehouse", "Business Intelligence", "Estatística Descritiva", "Teste de Hipóteses", "Distribuições", "Deep Learning", "CNN", "RNN", "IA Generativa", "LLM", "Geoprocessamento", "LGPD", "Ética em IA", "Data Mining", "Visualização de Dados", "Big Data", "Spark", "ETL"],
@@ -614,6 +728,16 @@
         const adminBtn = document.getElementById('adminPanelBtn');
         if (currentUser.isAdmin) adminBtn.style.display = 'inline-block';
         else adminBtn.style.display = 'none';
+        const certificadoBtn = document.getElementById('certificadoBtn');
+        if (verificarConclusaoCertificado() && !currentUser.certificadoEmitido) {
+            certificadoBtn.style.display = 'inline-block';
+            certificadoBtn.innerText = '🎓 Solicitar Certificado';
+        } else if (currentUser.certificadoEmitido) {
+            certificadoBtn.style.display = 'inline-block';
+            certificadoBtn.innerText = '📜 Ver Certificado';
+        } else {
+            certificadoBtn.style.display = 'none';
+        }
         renderBadges(currentUser);
         atualizarGrafico(currentUser);
         await carregarQuizDiario();
@@ -667,7 +791,7 @@
         return atualizarRanking();
     }
 
-    // ==================== ADMIN CRUD (Usuários) ====================
+    // ==================== ADMIN CRUD ====================
     function renderAdminPanel() {
         return db.usuarios.toArray().then(usuarios => {
             const tbody = document.getElementById('userTableBody');
@@ -682,7 +806,8 @@
                 const dataValue = u.ultimoSimulado ? new Date(u.ultimoSimulado).toISOString().split('T')[0] : '';
                 row.insertCell(5).innerHTML = `<input type="date" value="${dataValue}" class="edit-data" data-id="${u.id}">`;
                 row.insertCell(6).innerHTML = `<input type="number" step="1" min="0" max="100" value="${u.ultimaPontuacao||0}" class="edit-pontuacao" data-id="${u.id}">`;
-                const actions = row.insertCell(7);
+                row.insertCell(7).innerHTML = u.certificadoEmitido ? '✅ Emitido' : '❌ Não emitido';
+                const actions = row.insertCell(8);
                 actions.innerHTML = `<button class="save-user" data-id="${u.id}">Salvar</button> <button class="reset-pwd" data-id="${u.id}">Reset Senha</button> <button class="delete-user" data-id="${u.id}">Excluir</button>`;
             });
             document.querySelectorAll('.save-user').forEach(btn => {
@@ -741,8 +866,8 @@
     });
     document.getElementById('exportCsvBtn')?.addEventListener('click', () => {
         db.usuarios.toArray().then(usuarios => {
-            const cabecalho = ["Nome", "Email", "Pontos", "Downloads Restantes", "Ultimo Simulado", "Ultima Pontuacao (%)"];
-            const linhas = usuarios.map(u => [u.nome, u.email, u.pontos||0, u.downloadsRestantes, u.ultimoSimulado ? new Date(u.ultimoSimulado).toLocaleDateString() : "", u.ultimaPontuacao||""]);
+            const cabecalho = ["Nome", "Email", "Pontos", "Downloads Restantes", "Ultimo Simulado", "Ultima Pontuacao (%)", "Certificado"];
+            const linhas = usuarios.map(u => [u.nome, u.email, u.pontos||0, u.downloadsRestantes, u.ultimoSimulado ? new Date(u.ultimoSimulado).toLocaleDateString() : "", u.ultimaPontuacao||"", u.certificadoEmitido ? "Sim" : "Não"]);
             const conteudoCSV = [cabecalho, ...linhas].map(row => row.map(cell => `"${cell}"`).join(",")).join("\n");
             const blob = new Blob(["\uFEFF" + conteudoCSV], { type: "text/csv;charset=utf-8;" });
             const link = document.createElement("a");
@@ -874,7 +999,7 @@
         document.getElementById('quizModal').style.display = 'none';
     });
 
-    // ==================== SIMULADO ====================
+    // ==================== SIMULADO (COM CERTIFICADO) ====================
     let questoesAtuais = [], respostas = [], indiceAtual = 0, tempoRestante = 600, timerInterval = null, simuladoFinalizado = false, areaAtual = null, modoEstudo = false;
     function salvarProgressoSimulado() {
         if (!simuladoFinalizado && areaAtual && currentUser) {
@@ -968,6 +1093,26 @@
         }
         modal.style.display = 'flex';
     }
+    function tocarSomComemoracao() {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const now = audioCtx.currentTime;
+            const gainNode = audioCtx.createGain();
+            gainNode.connect(audioCtx.destination);
+            gainNode.gain.setValueAtTime(0.3, now);
+            const notas = [523.25, 659.25, 783.99, 523.25, 659.25, 783.99, 1046.50];
+            const duracao = 0.2;
+            notas.forEach((freq, index) => {
+                const osc = audioCtx.createOscillator();
+                osc.type = 'sine';
+                osc.frequency.value = freq;
+                osc.connect(gainNode);
+                osc.start(now + index * duracao);
+                osc.stop(now + (index + 1) * duracao);
+            });
+            audioCtx.resume();
+        } catch(e) { console.log("Som não suportado", e); }
+    }
     function finalizarSimulado() {
         if (simuladoFinalizado) return;
         clearInterval(timerInterval); simuladoFinalizado = true;
@@ -984,11 +1129,21 @@
             const historico = currentUser.historicoPontos || [];
             historico.push({ data: new Date().toISOString(), pontos: currentUser.pontos });
             currentUser.historicoPontos = historico.slice(-7);
+            // Registrar conclusão do simulado (para certificado)
+            if (!currentUser.simuladosConcluidos) currentUser.simuladosConcluidos = [];
+            if (!currentUser.simuladosConcluidos.includes(areaAtual.id)) {
+                currentUser.simuladosConcluidos.push(areaAtual.id);
+            }
             novasBadges = verificarConquistas(currentUser, { percentual });
             currentUser.badges = [...(currentUser.badges || []), ...novasBadges.filter(b => !currentUser.badges.includes(b))];
             updatePromise = atualizarUsuario(currentUser);
         }
         updatePromise.then(() => {
+            if (percentual >= 70) {
+                canvasConfetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, startVelocity: 20 });
+                setTimeout(() => canvasConfetti({ particleCount: 100, spread: 100, origin: { y: 0.5 } }), 200);
+                tocarSomComemoracao();
+            }
             const resultsDiv = document.getElementById('resultsPanel');
             resultsDiv.style.display = 'block';
             let botoes = '';
@@ -1019,6 +1174,15 @@
                 atualizarRanking();
                 renderBadges(currentUser);
                 atualizarGrafico(currentUser);
+                // Verificar se todos os módulos foram concluídos e mostrar botão de certificado
+                const certificadoBtn = document.getElementById('certificadoBtn');
+                if (verificarConclusaoCertificado() && !currentUser.certificadoEmitido) {
+                    certificadoBtn.style.display = 'inline-block';
+                    certificadoBtn.innerText = '🎓 Solicitar Certificado';
+                } else if (currentUser.certificadoEmitido) {
+                    certificadoBtn.style.display = 'inline-block';
+                    certificadoBtn.innerText = '📜 Ver Certificado';
+                }
             });
         });
     }
@@ -1046,6 +1210,53 @@
             showScreen('simulatorScreen');
         });
     }
+
+    // ==================== CERTIFICADO ====================
+    async function solicitarCertificado() {
+        if (!verificarConclusaoCertificado()) {
+            alert("Você ainda não concluiu todos os 6 módulos.");
+            return;
+        }
+        if (currentUser.certificadoEmitido) {
+            const certificado = currentUser.certificadoDados;
+            if (certificado) {
+                await gerarPDFCertificado(certificado);
+            } else {
+                alert("Erro: dados do certificado não encontrados.");
+            }
+            return;
+        }
+        // Mostrar modal para preenchimento dos dados
+        const modal = document.getElementById('certificadoModal');
+        modal.style.display = 'flex';
+        document.getElementById('certNome').value = currentUser.nome;
+        document.getElementById('certRG').value = '';
+        document.getElementById('certCPF').value = '';
+    }
+
+    document.getElementById('gerarCertificadoBtn')?.addEventListener('click', async () => {
+        const nome = document.getElementById('certNome').value.trim();
+        const rg = document.getElementById('certRG').value.trim();
+        const cpf = document.getElementById('certCPF').value.trim();
+        if (!nome || !rg || !cpf) {
+            alert("Preencha todos os campos.");
+            return;
+        }
+        const certificado = await emitirCertificado({ nome, rg, cpf });
+        if (certificado) {
+            document.getElementById('certificadoModal').style.display = 'none';
+            await gerarPDFCertificado(certificado);
+            // Atualiza badges e botão
+            renderBadges(currentUser);
+            const certificadoBtn = document.getElementById('certificadoBtn');
+            certificadoBtn.innerText = '📜 Ver Certificado';
+        } else {
+            alert("Erro ao emitir certificado.");
+        }
+    });
+    document.getElementById('closeCertificadoModal')?.addEventListener('click', () => {
+        document.getElementById('certificadoModal').style.display = 'none';
+    });
 
     // ==================== CONTROLE DE TELAS ====================
     function showScreen(screenId) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(screenId).classList.add('active'); }
@@ -1189,6 +1400,7 @@
         showScreen('dashboardScreen');
         atualizarRanking();
     });
+    document.getElementById('certificadoBtn').addEventListener('click', solicitarCertificado);
 </script>
 </body>
 </html>
