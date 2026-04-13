@@ -9,7 +9,6 @@
     <script src="https://unpkg.com/dexie@3.2.4/dist/dexie.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
-        /* (estilos idênticos à versão anterior, mas vou omitir para encurtar – você pode copiar do código final que enviei antes) */
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0b2b44 0%, #1b5e7a 100%); min-height: 100vh; padding: 1rem; }
         .screen { max-width: 1400px; margin: 0 auto; background: white; border-radius: 2rem; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: none; }
@@ -195,7 +194,7 @@
                 <button id="gerarDadosExemploBtn" class="btn" style="background: #ffaa33; color:#1e3b4a;"><i class="fas fa-dice-d6"></i> Gerar Dados de Exemplo</button>
             </div>
             <table class="admin-table" id="userTable">
-                <thead><tr><th>ID</th><th>Nome</th><th>Email</th><th>Pontos</th><th>Downloads Rest.</th><th>Último Simulado (data)</th><th>Última Pontuação (%)</th><th>Ações</th></td></thead>
+                <thead><tr><th>ID</th><th>Nome</th><th>Email</th><th>Pontos</th><th>Downloads Rest.</th><th>Último Simulado (data)</th><th>Última Pontuação (%)</th><th>Ações</th></tr></thead>
                 <tbody id="userTableBody"></tbody>
             </table>
         </div>
@@ -424,10 +423,25 @@
         });
     }
 
-    // ==================== QUIZ DIÁRIO (CORRIGIDO) ====================
+    // ==================== QUIZ DIÁRIO (COM CRIAÇÃO AUTOMÁTICA SE NÃO EXISTIR) ====================
     async function obterQuizDoDia() {
         const hoje = new Date().toLocaleDateString('en-CA');
-        return await db.quizzes.where({ data: hoje, ativo: true }).first();
+        let quiz = await db.quizzes.where({ data: hoje, ativo: true }).first();
+        if (!quiz) {
+            // Cria um quiz padrão automaticamente
+            const novoQuiz = {
+                data: hoje,
+                pergunta: "Qual a principal característica do NoSQL?",
+                alternativas: ["Esquema fixo", "ACID estrito", "Escalabilidade horizontal", "Junções complexas"],
+                correta: 2,
+                explicacao: "NoSQL é conhecido por escalabilidade horizontal, flexibilidade de esquema e alta performance.",
+                ativo: true
+            };
+            const id = await db.quizzes.add(novoQuiz);
+            quiz = { ...novoQuiz, id };
+            console.log("Quiz padrão criado para hoje:", hoje);
+        }
+        return quiz;
     }
     async function usuarioJaRespondeuQuiz(usuarioId, quizId) {
         const resp = await db.respostasQuiz.where({ usuarioId, quizId }).first();
@@ -485,7 +499,6 @@
             const isCorrect = (resposta === quiz.correta);
             const pontos = isCorrect ? 10 : 5;
             await responderQuiz(currentUser.id, quiz.id, resposta, pontos);
-            // Recarrega o quiz para mostrar o resultado
             await carregarQuizDiario();
             atualizarRanking();
             renderBadges(currentUser);
