@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://unpkg.com/dexie@3.2.4/dist/dexie.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0b2b44 0%, #1b5e7a 100%); min-height: 100vh; padding: 1rem; }
@@ -32,14 +33,35 @@
         .ranking-list li { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #e2edf2; font-size: 0.9rem; }
         .ranking-list li span:first-child { font-weight: 500; }
         .ranking-list .small-date { font-size: 0.7rem; color: #2c6979; }
-        .cards-grid { flex: 3; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+        .badges-panel { margin-top: 1rem; border-top: 1px solid #e2edf2; padding-top: 1rem; }
+        .badge-icon { font-size: 1.4rem; margin-right: 0.3rem; display: inline-block; opacity: 0.5; }
+        .badge-icon.earned { opacity: 1; color: #ffaa33; }
+        .cards-grid { flex: 3; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
         .card { background: white; border-radius: 1.5rem; border: 1px solid #e2edf2; box-shadow: 0 5px 15px rgba(0,0,0,0.05); transition: transform 0.2s; }
         .card:hover { transform: translateY(-5px); }
         .card-header { background: #f0f7fa; padding: 1rem; display: flex; align-items: center; gap: 0.8rem; border-bottom: 2px solid #ffaa33; }
         .card-header i { font-size: 1.8rem; color: #0b5e7c; }
         .card-body { padding: 1rem; }
-        .btn-group { display: flex; gap: 0.6rem; margin-top: 1rem; }
+        .btn-group { display: flex; gap: 0.6rem; margin-top: 1rem; flex-wrap: wrap; }
         .btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.4rem 1rem; border-radius: 2rem; text-decoration: none; font-weight: 600; font-size: 0.8rem; background: #0b5e7c; color: white; cursor: pointer; border: none; }
+        .btn-secondary { background: #e2edf2; color: #1e3b4a; }
+        .btn-disabled { background: #ccc; cursor: not-allowed; position: relative; }
+        .btn-disabled:hover::after {
+            content: "Disponível em breve";
+            position: absolute;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 10;
+        }
+        .study-mode { background: #28a745; }
+        .study-mode.active { background: #ffaa33; color: #1e3b4a; }
         .pdf-destaque { background: #ffecb3; border-radius: 1rem; padding: 0.5rem; margin-top: 0.8rem; font-size: 0.75rem; text-align: center; color: #b45f06; font-weight: 500; }
         .footer-links { background: #e9f0f4; padding: 1rem; text-align: center; font-size: 0.8rem; border-top: 1px solid #cde0e8; }
         .social-icons { display: flex; justify-content: center; gap: 1.5rem; margin-bottom: 0.5rem; }
@@ -74,17 +96,18 @@
         .score { font-size: 2rem; font-weight: 800; color: #0b5e7c; }
         .back-btn { background: #e2edf2; color: #1e3b4a; margin-bottom: 1rem; display: inline-block; cursor: pointer; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: white; padding: 2rem; border-radius: 1.5rem; max-width: 400px; width: 90%; }
+        .modal-content { background: white; padding: 2rem; border-radius: 1.5rem; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto; }
         .modal-content input { width: 100%; padding: 0.5rem; margin: 0.5rem 0; border: 1px solid #cde0e8; border-radius: 0.5rem; }
         .modal-content button { margin-top: 1rem; }
         .btn-download { background: #28a745; color: white; font-weight: bold; font-size: 1rem; padding: 0.6rem 1.5rem; }
         .btn-download:hover { background: #218838; }
-        @media (max-width:800px) { .simulator-content { flex-direction: column; } .nav-panel { position: static; } .two-columns { flex-direction: column; } }
+        .chart-container { max-width: 400px; margin-top: 1rem; }
+        @media (max-width:800px) { .simulator-content { flex-direction: column; } .nav-panel { position: static; } .two-columns { flex-direction: column; } .chart-container { max-width: 100%; } }
     </style>
 </head>
 <body>
 
-<!-- TELA DE LOGIN/CADASTRO -->
+<!-- TELA DE LOGIN/CADASTRO (mesma da versão anterior) -->
 <div id="loginScreen" class="screen active">
     <div class="header">
         <i class="fab fa-youtube fa-4x" style="color:#c0392b;"></i>
@@ -134,7 +157,10 @@
         <div class="ranking-panel">
             <h3><i class="fas fa-trophy"></i> Ranking de Pontuação</h3>
             <ul id="rankingList" class="ranking-list"></ul>
-            <div style="margin-top:1rem; font-size:0.7rem; color:#2c6979;">Última simulação: data e pontuação</div>
+            <div class="badges-panel" id="badgesPanel"></div>
+            <div class="chart-container">
+                <canvas id="pontosChart"></canvas>
+            </div>
         </div>
         <div class="cards-grid" id="cardsGrid"></div>
     </div>
@@ -150,7 +176,7 @@
     </div>
 </div>
 
-<!-- TELA ADMIN -->
+<!-- TELA ADMIN (CRUD de usuários) -->
 <div id="adminScreen" class="screen">
     <div class="dashboard-header">
         <div><i class="fas fa-users-cog"></i> Painel de Controle - Admin</div>
@@ -182,6 +208,8 @@
 <div id="simulatorScreen" class="screen">
     <div style="padding: 1rem 1rem 0 1rem;">
         <button id="backToDashboard" class="btn back-btn"><i class="fas fa-arrow-left"></i> Voltar</button>
+        <button id="studyModeToggle" class="btn study-mode" style="float:right;"><i class="fas fa-graduation-cap"></i> Modo Estudo</button>
+        <div style="clear:both"></div>
     </div>
     <div class="simulator-header">
         <h1 id="simulatorTitle"><i class="fas fa-brain"></i> Carregando...</h1>
@@ -212,6 +240,15 @@
     </footer>
 </div>
 
+<!-- Modal para revisão de erros -->
+<div id="revisaoModal" class="modal">
+    <div class="modal-content">
+        <h3>Revisão das questões erradas</h3>
+        <div id="revisaoList"></div>
+        <button id="closeRevisaoBtn" class="btn">Fechar</button>
+    </div>
+</div>
+
 <!-- Modal alterar senha -->
 <div id="changePwdModal" class="modal">
     <div class="modal-content">
@@ -228,31 +265,32 @@
     // ==================== INDEXEDDB (DEXIE) ====================
     const db = new Dexie("EstudandoTIDB");
     db.version(1).stores({
-        usuarios: "++id, nome, email, senha, pontos, downloadsRestantes, ultimoSimulado, ultimaPontuacao, isAdmin",
-        progresso: "&id, respostas, tempoRestante, indiceAtual"
+        usuarios: "++id, nome, email, senha, pontos, downloadsRestantes, ultimoSimulado, ultimaPontuacao, isAdmin, badges, historicoPontos",
+        progresso: "&id, respostas, tempoRestante, indiceAtual, modoEstudoAtivo",
+        areasConfig: "++id, areaId, disponivel"
     });
 
     function inicializarDadosPadrao() {
         return db.usuarios.count().then(count => {
             if (count === 0) {
                 return db.usuarios.bulkAdd([
-                    { nome: "Ana Carolina", email: "ana@teste.com", senha: "123", pontos: 98, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null, isAdmin: false },
-                    { nome: "Bruno Lima", email: "bruno@teste.com", senha: "123", pontos: 95, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null, isAdmin: false },
-                    { nome: "Administrador", email: "admin@admin.com", senha: "admin123", pontos: 0, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null, isAdmin: true }
+                    { nome: "Ana Carolina", email: "ana@teste.com", senha: "123", pontos: 76, downloadsRestantes: 3, ultimoSimulado: "2026-04-05T00:00:00.000Z", ultimaPontuacao: 51, isAdmin: false, badges: [], historicoPontos: [{ data: "2026-04-05", pontos: 76 }] },
+                    { nome: "Bruno Lima", email: "bruno@teste.com", senha: "123", pontos: 105, downloadsRestantes: 3, ultimoSimulado: "2026-04-12T00:00:00.000Z", ultimaPontuacao: 70, isAdmin: false, badges: [], historicoPontos: [{ data: "2026-04-12", pontos: 105 }] },
+                    { nome: "Administrador", email: "admin@admin.com", senha: "admin123", pontos: 0, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null, isAdmin: true, badges: [], historicoPontos: [] }
                 ]);
             }
         });
     }
 
     let currentUser = null;
+    let chartInstance = null;
 
-    function autenticar(email, senha) {
-        return db.usuarios.where({ email, senha }).first();
-    }
+    // Funções CRUD (idênticas à versão anterior, mas com badges e historico)
+    function autenticar(email, senha) { return db.usuarios.where({ email, senha }).first(); }
     function adicionarUsuario(nome, email, senha) {
         return db.usuarios.where({ email }).first().then(existente => {
             if (existente) return false;
-            return db.usuarios.add({ nome, email, senha, pontos: 0, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null, isAdmin: false }).then(() => true);
+            return db.usuarios.add({ nome, email, senha, pontos: 0, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null, isAdmin: false, badges: [], historicoPontos: [] }).then(() => true);
         });
     }
     function atualizarUsuario(usuarioAtualizado) {
@@ -271,7 +309,72 @@
         return atualizarUsuario(currentUser).then(() => { alert("Senha alterada com sucesso!"); return true; });
     }
 
-    // ==================== GERADOR DE QUESTÕES ====================
+    // ==================== CONQUISTAS (BADGES) ====================
+    const badgesDef = [
+        { id: "primeiro_simulado", nome: "Primeiro Passo", icone: "🎓", descricao: "Concluir o primeiro simulado" },
+        { id: "70_porcento", nome: "Aprovado", icone: "🏅", descricao: "Atingir 70% em qualquer simulado" },
+        { id: "100_porcento", nome: "Excelência", icone: "🌟", descricao: "Atingir 100% em qualquer simulado" },
+        { id: "cinco_simulados", nome: "Dedicação", icone: "📚", descricao: "Completar 5 simulados" }
+    ];
+
+    function verificarConquistas(usuario, resultadoSimulado) {
+        let novasBadges = [...(usuario.badges || [])];
+        if (!novasBadges.includes("primeiro_simulado")) {
+            // Verificar se é o primeiro simulado concluído (contar quantos simulados já fez)
+            const totalSimulados = (usuario.historicoPontos || []).length;
+            if (totalSimulados === 0) novasBadges.push("primeiro_simulado");
+        }
+        if (!novasBadges.includes("70_porcento") && resultadoSimulado.percentual >= 70) {
+            novasBadges.push("70_porcento");
+        }
+        if (!novasBadges.includes("100_porcento") && resultadoSimulado.percentual >= 100) {
+            novasBadges.push("100_porcento");
+        }
+        if (!novasBadges.includes("cinco_simulados")) {
+            const totalSimulados = (usuario.historicoPontos || []).length + 1;
+            if (totalSimulados >= 5) novasBadges.push("cinco_simulados");
+        }
+        return novasBadges;
+    }
+
+    function renderBadges(usuario) {
+        const badgesPanel = document.getElementById('badgesPanel');
+        if (!badgesPanel) return;
+        const earned = usuario.badges || [];
+        badgesPanel.innerHTML = '<strong><i class="fas fa-medal"></i> Conquistas</strong><div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.5rem;">' +
+            badgesDef.map(b => `<div class="badge-icon ${earned.includes(b.id) ? 'earned' : ''}" title="${b.descricao}">${b.icone} ${b.nome}</div>`).join('') +
+            '</div>';
+    }
+
+    // ==================== GRÁFICO DE EVOLUÇÃO ====================
+    function atualizarGrafico(usuario) {
+        const ctx = document.getElementById('pontosChart').getContext('2d');
+        const historico = usuario.historicoPontos || [];
+        const labels = historico.map(h => new Date(h.data).toLocaleDateString());
+        const dados = historico.map(h => h.pontos);
+        if (chartInstance) chartInstance.destroy();
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: { labels, datasets: [{ label: 'Pontuação', data: dados, borderColor: '#0b5e7c', backgroundColor: 'rgba(11,94,124,0.1)', tension: 0.3, fill: true }] },
+            options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'top' } } }
+        });
+    }
+
+    // ==================== ÁREAS (com novas disciplinas "Em breve") ====================
+    const areas = [
+        { id: "cientista-dados", nome: "Cientista de Dados", icone: "brain", pdf: "ebook-cientista-dados.pdf", disponivel: true },
+        { id: "engenheiro-dados", nome: "Engenheiro de Dados", icone: "database", pdf: "ebook-Engenheiro-Dados.pdf", disponivel: true },
+        { id: "analista-seguranca", nome: "Analista de Segurança", icone: "shield-alt", pdf: "ebook-Analista-Segurança.pdf", disponivel: true },
+        { id: "analista-infraestrutura", nome: "Analista de Infraestrutura", icone: "server", pdf: "ebook-Analista-Infraestrutura.pdf", disponivel: true },
+        { id: "analista-sistemas", nome: "Analista de Sistemas", icone: "code", pdf: "ebook-Analista-Sistemas.pdf", disponivel: true },
+        { id: "analista-ux", nome: "Analista de UX", icone: "palette", pdf: "ebook-UX.pdf", disponivel: true },
+        { id: "portugues", nome: "Português", icone: "language", pdf: null, disponivel: false },
+        { id: "raciocinio-logico", nome: "Raciocínio Lógico", icone: "brain", pdf: null, disponivel: false },
+        { id: "legislacao-ti", nome: "Legislação de TI", icone: "gavel", pdf: null, disponivel: false },
+        { id: "ingles-tecnico", nome: "Inglês Técnico", icone: "language", pdf: null, disponivel: false }
+    ];
+
+    // ==================== GERADOR DE QUESTÕES (mesmo anterior) ====================
     function obterQuestoesDaArea(areaId) {
         const topicosPorArea = {
             "cientista-dados": ["Regressão Linear", "Overfitting", "Validação Cruzada", "PCA", "Clusterização", "Redes Neurais", "Árvores de Decisão", "SVM", "Naive Bayes", "Ensemble", "Métricas de Avaliação", "SQL para Análise", "Data Warehouse", "Business Intelligence", "Estatística Descritiva", "Teste de Hipóteses", "Distribuições", "Deep Learning", "CNN", "RNN", "IA Generativa", "LLM", "Geoprocessamento", "LGPD", "Ética em IA", "Data Mining", "Visualização de Dados", "Big Data", "Spark", "ETL"],
@@ -281,9 +384,10 @@
             "analista-sistemas": ["Arquitetura de Software", "Java/Spring", "Front-end (React, Angular)", "Testes (unitários, integração)", "DevOps", "Containers (Docker)", "Microsserviços", "APIs REST", "GraphQL", "Bancos de Dados Relacionais", "ORM", "Design Patterns", "SOLID", "Clean Code", "Versionamento (Git)", "CI/CD (Jenkins, GitLab CI)", "Cloud Native", "Mensageria (RabbitMQ, Kafka)", "Segurança em Aplicações", "OAuth2", "JWT", "Metodologias Ágeis (Scrum, Kanban)", "Documentação", "Arquitetura Hexagonal", "DDD", "TDD", "BDD", "Observabilidade", "Performance", "Monitoramento"],
             "analista-ux": ["Design Centrado no Usuário", "Heurísticas de Nielsen", "Prototipação (Figma, Sketch)", "Pesquisa com Usuários", "Acessibilidade (WCAG)", "UX Writing", "Arquitetura da Informação", "Testes de Usabilidade", "Card Sorting", "Personas", "Jornada do Usuário", "Wireframes", "Design System", "UI Design", "Cores e Tipografia", "Design Responsivo", "Microinterações", "Mobile First", "Design Thinking", "Entrevistas", "Questionários", "Análise de Concorrência", "Métrica de UX (SUS, NPS)", "Emoção do Usuário", "Neuro UX", "Inclusão Digital", "Design Ético", "Governança de UX", "Design Ops", "Portfólio de UX"]
         };
+        // Para áreas "em breve", retorna array vazio (não será usado)
+        if (!topicosPorArea[areaId]) return [];
         const questoes = [];
         const temas = topicosPorArea[areaId];
-        if (!temas) return [];
         for (let i = 0; i < 30; i++) {
             const tema = temas[i % temas.length];
             let pergunta = `Sobre ${tema}, assinale a alternativa correta:`;
@@ -341,15 +445,6 @@
         return { text: question.text, options: newOptions, correct: newCorrect };
     }
 
-    const areas = [
-        { id: "cientista-dados", nome: "Cientista de Dados", icone: "brain", pdf: "ebook-cientista-dados.pdf" },
-        { id: "engenheiro-dados", nome: "Engenheiro de Dados", icone: "database", pdf: "ebook-Engenheiro-Dados.pdf" },
-        { id: "analista-seguranca", nome: "Analista de Segurança", icone: "shield-alt", pdf: "ebook-Analista-Segurança.pdf" },
-        { id: "analista-infraestrutura", nome: "Analista de Infraestrutura", icone: "server", pdf: "ebook-Analista-Infraestrutura.pdf" },
-        { id: "analista-sistemas", nome: "Analista de Sistemas", icone: "code", pdf: "ebook-Analista-Sistemas.pdf" },
-        { id: "analista-ux", nome: "Analista de UX", icone: "palette", pdf: "ebook-UX.pdf" }
-    ];
-
     // ==================== RANKING ====================
     function atualizarRanking() {
         return db.usuarios.toArray().then(usuarios => {
@@ -374,17 +469,26 @@
         const adminBtn = document.getElementById('adminPanelBtn');
         if (currentUser.isAdmin) adminBtn.style.display = 'inline-block';
         else adminBtn.style.display = 'none';
+        renderBadges(currentUser);
+        atualizarGrafico(currentUser);
         const container = document.getElementById('cardsGrid');
         container.innerHTML = '';
         areas.forEach(area => {
             const card = document.createElement('div');
             card.className = 'card';
+            const btnSimulado = area.disponivel ?
+                `<button class="btn start-simulado" data-area='${JSON.stringify(area)}'><i class="fas fa-play"></i> Simulado</button>` :
+                `<button class="btn btn-disabled" disabled><i class="fas fa-clock"></i> Em breve</button>`;
+            const btnEbook = (area.pdf && area.disponivel) ? `<button class="btn btn-secondary download-ebook" data-pdf="${area.pdf}"><i class="fas fa-book"></i> E-book</button>` : '';
+            const btnStudyMode = area.disponivel ? `<button class="btn study-mode toggle-study-mode" data-area-id="${area.id}" style="background:#6c757d;"><i class="fas fa-graduation-cap"></i> Modo estudo</button>` : '';
             card.innerHTML = `
                 <div class="card-header"><i class="fas fa-${area.icone}"></i><h3>${area.nome}</h3></div>
                 <div class="card-body">
                     <p>30 questões estilo FGV (cada acerto vale 5 pontos)</p>
                     <div class="btn-group">
-                        <button class="btn start-simulado" data-area='${JSON.stringify(area)}'><i class="fas fa-play"></i> Simulado</button>
+                        ${btnSimulado}
+                        ${btnEbook}
+                        ${btnStudyMode}
                     </div>
                     <div class="pdf-destaque"><i class="fas fa-gift"></i> 📘 Acertando 70% você ganha o PDF com 100 questões comentadas da área!</div>
                 </div>
@@ -394,8 +498,35 @@
         document.querySelectorAll('.start-simulado').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const area = JSON.parse(btn.getAttribute('data-area'));
-                iniciarSimulado(area);
+                iniciarSimulado(area, false);
             });
+        });
+        document.querySelectorAll('.download-ebook').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const pdf = btn.getAttribute('data-pdf');
+                window.open(pdf, '_blank');
+            });
+        });
+        document.querySelectorAll('.toggle-study-mode').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const areaId = btn.getAttribute('data-area-id');
+                // Recupera ou cria configuração de modo estudo para essa área
+                let config = await db.areasConfig.where({ areaId }).first();
+                if (!config) config = { areaId, modoEstudoAtivo: false };
+                const novoModo = !config.modoEstudoAtivo;
+                await db.areasConfig.put({ ...config, modoEstudoAtivo: novoModo });
+                btn.style.background = novoModo ? '#28a745' : '#6c757d';
+                btn.innerHTML = novoModo ? '<i class="fas fa-check-circle"></i> Modo estudo ativo' : '<i class="fas fa-graduation-cap"></i> Modo estudo';
+            });
+            // Carregar estado atual
+            (async () => {
+                const areaId = btn.getAttribute('data-area-id');
+                const config = await db.areasConfig.where({ areaId }).first();
+                if (config && config.modoEstudoAtivo) {
+                    btn.style.background = '#28a745';
+                    btn.innerHTML = '<i class="fas fa-check-circle"></i> Modo estudo ativo';
+                }
+            })();
         });
         return atualizarRanking();
     }
@@ -507,14 +638,15 @@
     });
 
     // ==================== SIMULADO ====================
-    let questoesAtuais = [], respostas = [], indiceAtual = 0, tempoRestante = 600, timerInterval = null, simuladoFinalizado = false, areaAtual = null;
+    let questoesAtuais = [], respostas = [], indiceAtual = 0, tempoRestante = 600, timerInterval = null, simuladoFinalizado = false, areaAtual = null, modoEstudo = false;
     function salvarProgressoSimulado() {
         if (!simuladoFinalizado && areaAtual && currentUser) {
             return db.progresso.put({
                 id: `${currentUser.id}_${areaAtual.id}`,
                 respostas: respostas,
                 tempoRestante: tempoRestante,
-                indiceAtual: indiceAtual
+                indiceAtual: indiceAtual,
+                modoEstudoAtivo: modoEstudo
             }).catch(e => console.log);
         }
         return Promise.resolve();
@@ -525,9 +657,12 @@
                 respostas = saved.respostas || new Array(questoesAtuais.length).fill(null);
                 tempoRestante = saved.tempoRestante ?? 600;
                 indiceAtual = saved.indiceAtual ?? 0;
+                modoEstudo = saved.modoEstudoAtivo || false;
             } else {
                 respostas = new Array(questoesAtuais.length).fill(null);
+                modoEstudo = false;
             }
+            document.getElementById('studyModeToggle').classList.toggle('active', modoEstudo);
         });
     }
     function formatarTempo(s) { let m = Math.floor(s/60), seg = s%60; return `${m.toString().padStart(2,'0')}:${seg.toString().padStart(2,'0')}`; }
@@ -536,19 +671,34 @@
         if (timerInterval) clearInterval(timerInterval);
         timerInterval = setInterval(() => {
             if (simuladoFinalizado) return;
-            if (tempoRestante <= 0) { clearInterval(timerInterval); alert("Tempo esgotado!"); finalizarSimulado(); }
-            else { tempoRestante--; atualizarTimerUI(); salvarProgressoSimulado(); }
+            if (!modoEstudo && tempoRestante <= 0) { clearInterval(timerInterval); alert("Tempo esgotado!"); finalizarSimulado(); }
+            else if (!modoEstudo) { tempoRestante--; atualizarTimerUI(); salvarProgressoSimulado(); }
         }, 1000);
     }
     function renderizarQuestao() {
         const q = questoesAtuais[indiceAtual];
         const resp = respostas[indiceAtual];
         let html = `<div class="question-card"><div class="question-text">${indiceAtual+1}. ${q.text}</div><ul class="options">`;
-        q.options.forEach((opt, idx) => { html += `<li><input type="radio" name="questao" value="${idx}" id="alt${idx}" ${resp === idx ? 'checked' : ''}><label for="alt${idx}">${opt}</label></li>`; });
-        html += `</ul></div>`;
+        q.options.forEach((opt, idx) => {
+            html += `<li><input type="radio" name="questao" value="${idx}" id="alt${idx}" ${resp === idx ? 'checked' : ''}><label for="alt${idx}">${opt}</label></li>`;
+        });
+        html += `</ul>`;
+        if (modoEstudo && resp !== null) {
+            const isCorrect = (resp === q.correct);
+            html += `<div style="margin-top:0.5rem; padding:0.5rem; background:${isCorrect ? '#d4edda' : '#f8d7da'}; border-radius:0.5rem;">
+                        ${isCorrect ? '✅ Correta!' : `❌ Incorreta. Resposta correta: ${q.options[q.correct]}`}
+                     </div>`;
+        }
+        html += `</div>`;
         document.getElementById('questionsPanel').innerHTML = html;
         document.querySelectorAll('input[name="questao"]').forEach(radio => {
-            radio.addEventListener('change', (e) => { respostas[indiceAtual] = parseInt(e.target.value); atualizarNavegacaoUI(); atualizarBarraProgresso(); salvarProgressoSimulado(); });
+            radio.addEventListener('change', (e) => {
+                respostas[indiceAtual] = parseInt(e.target.value);
+                atualizarNavegacaoUI();
+                atualizarBarraProgresso();
+                salvarProgressoSimulado();
+                if (modoEstudo) renderizarQuestao(); // atualiza feedback
+            });
         });
     }
     function renderizarNavegacao() {
@@ -565,6 +715,22 @@
         const respondidas = respostas.filter(r => r !== null).length;
         document.getElementById('progressFill').style.width = `${(respondidas/questoesAtuais.length)*100}%`;
     }
+    function mostrarRevisaoErros(questoes, respostasUsadas) {
+        const erros = [];
+        for (let i=0; i<questoes.length; i++) {
+            if (respostasUsadas[i] !== null && respostasUsadas[i] !== questoes[i].correct) {
+                erros.push({ numero: i+1, pergunta: questoes[i].text, respostaUsuario: questoes[i].options[respostasUsadas[i]], respostaCorreta: questoes[i].options[questoes[i].correct] });
+            }
+        }
+        const modal = document.getElementById('revisaoModal');
+        const listaDiv = document.getElementById('revisaoList');
+        if (erros.length === 0) {
+            listaDiv.innerHTML = '<p>Parabéns! Você não errou nenhuma questão.</p>';
+        } else {
+            listaDiv.innerHTML = erros.map(e => `<div style="border-bottom:1px solid #ccc; margin-bottom:0.5rem;"><strong>Q${e.numero}: ${e.pergunta}</strong><br>Sua resposta: ${e.respostaUsuario}<br>Resposta correta: ${e.respostaCorreta}</div>`).join('');
+        }
+        modal.style.display = 'flex';
+    }
     function finalizarSimulado() {
         if (simuladoFinalizado) return;
         clearInterval(timerInterval); simuladoFinalizado = true;
@@ -573,10 +739,17 @@
         const percentual = (acertos / questoesAtuais.length) * 100;
         const pontosGanhos = acertos * 5;
         let updatePromise = Promise.resolve();
+        let novasBadges = [];
         if (pontosGanhos > 0) {
             currentUser.pontos += pontosGanhos;
             currentUser.ultimoSimulado = new Date().toISOString();
             currentUser.ultimaPontuacao = percentual.toFixed(1);
+            // Atualiza histórico de pontos
+            const historico = currentUser.historicoPontos || [];
+            historico.push({ data: new Date().toISOString(), pontos: currentUser.pontos });
+            currentUser.historicoPontos = historico.slice(-7); // mantém últimos 7
+            novasBadges = verificarConquistas(currentUser, { percentual });
+            currentUser.badges = [...(currentUser.badges || []), ...novasBadges.filter(b => !currentUser.badges.includes(b))];
             updatePromise = atualizarUsuario(currentUser);
         }
         updatePromise.then(() => {
@@ -589,8 +762,9 @@
             } else {
                 botoes = `<p style="color:#c0392b;">🔒 Atingiu ${percentual.toFixed(1)}% – mínimo 70% para baixar o PDF.</p><p><i class="fab fa-youtube"></i> <a href="https://www.youtube.com/@EstudandoTI_Brasil" target="_blank" style="color:#0b5e7c;">Assista as aulas no Youtube</a> para melhorar seu desempenho!</p>`;
             }
-            resultsDiv.innerHTML = `<h3>Resultado Final</h3><div class="score">${acertos}/${questoesAtuais.length} (${percentual.toFixed(1)}%)</div><p>+${pontosGanhos} pontos (${acertos} acertos × 5)</p>${botoes}<button id="restartBtn" class="btn" style="margin-top:1rem;"><i class="fas fa-sync-alt"></i> Refazer Simulado</button>`;
-            document.getElementById('restartBtn')?.addEventListener('click', () => { iniciarSimulado(areaAtual); });
+            resultsDiv.innerHTML = `<h3>Resultado Final</h3><div class="score">${acertos}/${questoesAtuais.length} (${percentual.toFixed(1)}%)</div><p>+${pontosGanhos} pontos (${acertos} acertos × 5)</p>${botoes}<button id="restartBtn" class="btn" style="margin-top:1rem;"><i class="fas fa-sync-alt"></i> Refazer Simulado</button><button id="revisarErrosBtn" class="btn" style="margin-top:1rem; background:#6c757d;"><i class="fas fa-search"></i> Revisar questões erradas</button>`;
+            document.getElementById('restartBtn')?.addEventListener('click', () => { iniciarSimulado(areaAtual, modoEstudo); });
+            document.getElementById('revisarErrosBtn')?.addEventListener('click', () => { mostrarRevisaoErros(questoesAtuais, respostas); });
             if (percentual >= 70 && currentUser.downloadsRestantes > 0) {
                 const downloadBtn = document.getElementById('downloadPdfBtn');
                 if (downloadBtn) downloadBtn.addEventListener('click', () => {
@@ -605,16 +779,22 @@
                 });
             }
             document.getElementById('submitBtn').disabled = true; document.getElementById('submitBtn').style.opacity = '0.6';
-            db.progresso.delete(`${currentUser.id}_${areaAtual.id}`).then(() => atualizarRanking());
+            db.progresso.delete(`${currentUser.id}_${areaAtual.id}`).then(() => {
+                atualizarRanking();
+                renderBadges(currentUser);
+                atualizarGrafico(currentUser);
+            });
         });
     }
-    function iniciarSimulado(area) {
+    function iniciarSimulado(area, modoEstudoForcado = false) {
         areaAtual = area;
         const questoesBase = obterQuestoesDaArea(area.id);
+        if (questoesBase.length === 0) { alert("Simulado em breve!"); return; }
         questoesAtuais = questoesBase.map(q => shuffleOptions(q));
         carregarProgressoSimulado().then(() => {
+            if (modoEstudoForcado !== undefined) modoEstudo = modoEstudoForcado;
             simuladoFinalizado = false;
-            tempoRestante = tempoRestante || 600;
+            if (!modoEstudo) tempoRestante = tempoRestante || 600;
             atualizarTimerUI();
             if (timerInterval) clearInterval(timerInterval);
             iniciarTimer();
@@ -690,6 +870,29 @@
                 document.getElementById('confirmPassword').value = '';
             }
         });
+    });
+
+    // ==================== MODAL REVISÃO ====================
+    document.getElementById('closeRevisaoBtn')?.addEventListener('click', () => {
+        document.getElementById('revisaoModal').style.display = 'none';
+    });
+
+    // ==================== BOTÃO MODO ESTUDO NA TELA SIMULADO ====================
+    document.getElementById('studyModeToggle')?.addEventListener('click', () => {
+        modoEstudo = !modoEstudo;
+        document.getElementById('studyModeToggle').classList.toggle('active', modoEstudo);
+        if (modoEstudo) {
+            // Se ativar modo estudo, desabilita o timer (parar contagem)
+            if (timerInterval) clearInterval(timerInterval);
+            document.getElementById('timerDisplay').style.opacity = '0.5';
+        } else {
+            // Reativar timer com o tempo atual
+            if (timerInterval) clearInterval(timerInterval);
+            iniciarTimer();
+            document.getElementById('timerDisplay').style.opacity = '1';
+        }
+        salvarProgressoSimulado();
+        renderizarQuestao(); // para atualizar feedback imediato
     });
 
     // ==================== INICIALIZAÇÃO ====================
