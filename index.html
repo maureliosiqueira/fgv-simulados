@@ -9,6 +9,7 @@
     <script src="https://unpkg.com/dexie@3.2.4/dist/dexie.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
+        /* ========== ESTILOS (mesmos das versões anteriores, com acréscimos para admin de quizzes) ========== */
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0b2b44 0%, #1b5e7a 100%); min-height: 100vh; padding: 1rem; }
         .screen { max-width: 1400px; margin: 0 auto; background: white; border-radius: 2rem; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: none; }
@@ -100,17 +101,22 @@
         .score { font-size: 2rem; font-weight: 800; color: #0b5e7c; }
         .back-btn { background: #e2edf2; color: #1e3b4a; margin-bottom: 1rem; display: inline-block; cursor: pointer; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: white; padding: 2rem; border-radius: 1.5rem; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto; }
-        .modal-content input { width: 100%; padding: 0.5rem; margin: 0.5rem 0; border: 1px solid #cde0e8; border-radius: 0.5rem; }
+        .modal-content { background: white; padding: 2rem; border-radius: 1.5rem; max-width: 700px; width: 90%; max-height: 85vh; overflow-y: auto; }
+        .modal-content input, .modal-content textarea, .modal-content select { width: 100%; padding: 0.5rem; margin: 0.5rem 0; border: 1px solid #cde0e8; border-radius: 0.5rem; }
         .modal-content button { margin-top: 1rem; }
         .btn-download { background: #28a745; color: white; font-weight: bold; font-size: 1rem; padding: 0.6rem 1.5rem; }
         .btn-download:hover { background: #218838; }
+        .tab-buttons { display: flex; gap: 1rem; margin-bottom: 1rem; border-bottom: 1px solid #cde0e8; padding-bottom: 0.5rem; }
+        .tab-btn { background: none; border: none; padding: 0.5rem 1rem; cursor: pointer; font-weight: 600; color: #2c6979; }
+        .tab-btn.active { background: #ffaa33; color: #1e3b4a; border-radius: 2rem; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
         @media (max-width:800px) { .simulator-content { flex-direction: column; } .nav-panel { position: static; } .two-columns { flex-direction: column; } }
     </style>
 </head>
 <body>
 
-<!-- TELA DE LOGIN/CADASTRO -->
+<!-- TELA DE LOGIN/CADASTRO (mesma das versões anteriores) -->
 <div id="loginScreen" class="screen active">
     <div class="header">
         <i class="fab fa-youtube fa-4x" style="color:#c0392b;"></i>
@@ -183,22 +189,37 @@
     </div>
 </div>
 
-<!-- TELA ADMIN (CRUD de usuários) -->
+<!-- TELA ADMIN (CRUD de usuários + Gerenciamento de Quizzes) -->
 <div id="adminScreen" class="screen">
     <div class="dashboard-header">
         <div><i class="fas fa-users-cog"></i> Painel de Controle - Admin</div>
         <div><span class="logout-btn" id="backFromAdmin">Voltar ao Dashboard</span></div>
     </div>
     <div class="admin-panel">
-        <div style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
-            <button id="addUserBtn" class="btn"><i class="fas fa-plus"></i> Novo Usuário</button>
-            <button id="exportCsvBtn" class="btn" style="background: #28a745;"><i class="fas fa-file-csv"></i> Exportar CSV</button>
-            <button id="gerarDadosExemploBtn" class="btn" style="background: #ffaa33; color:#1e3b4a;"><i class="fas fa-dice-d6"></i> Gerar Dados de Exemplo</button>
+        <div class="tab-buttons">
+            <button class="tab-btn active" data-tab="usuarios">Usuários</button>
+            <button class="tab-btn" data-tab="quizzes">Gerenciar Quizzes</button>
         </div>
-        <table class="admin-table" id="userTable">
-            <thead><tr><th>ID</th><th>Nome</th><th>Email</th><th>Pontos</th><th>Downloads Rest.</th><th>Último Simulado (data)</th><th>Última Pontuação (%)</th><th>Ações</th></tr></thead>
-            <tbody id="userTableBody"></tbody>
-        </table>
+        <!-- Aba Usuários -->
+        <div id="tabUsuarios" class="tab-content active">
+            <div style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                <button id="addUserBtn" class="btn"><i class="fas fa-plus"></i> Novo Usuário</button>
+                <button id="exportCsvBtn" class="btn" style="background: #28a745;"><i class="fas fa-file-csv"></i> Exportar CSV</button>
+                <button id="gerarDadosExemploBtn" class="btn" style="background: #ffaa33; color:#1e3b4a;"><i class="fas fa-dice-d6"></i> Gerar Dados de Exemplo</button>
+            </div>
+            <table class="admin-table" id="userTable">
+                <thead><tr><th>ID</th><th>Nome</th><th>Email</th><th>Pontos</th><th>Downloads Rest.</th><th>Último Simulado (data)</th><th>Última Pontuação (%)</th><th>Ações</th></tr></thead>
+                <tbody id="userTableBody"></tbody>
+            </table>
+        </div>
+        <!-- Aba Gerenciar Quizzes -->
+        <div id="tabQuizzes" class="tab-content">
+            <button id="addQuizBtn" class="btn" style="margin-bottom:1rem;"><i class="fas fa-plus"></i> Adicionar Quiz</button>
+            <table class="admin-table" id="quizTable">
+                <thead><tr><th>ID</th><th>Data</th><th>Pergunta</th><th>Alternativas</th><th>Correta</th><th>Ativo</th><th>Ações</th></tr></thead>
+                <tbody id="quizTableBody"></tbody>
+            </table>
+        </div>
     </div>
     <div class="footer-links">
         <div class="social-text">Siga-nos nas redes sociais</div>
@@ -211,7 +232,32 @@
     </div>
 </div>
 
-<!-- TELA SIMULADO -->
+<!-- Modal para edição/criação de Quiz -->
+<div id="quizModal" class="modal">
+    <div class="modal-content">
+        <h3 id="quizModalTitle">Adicionar Quiz</h3>
+        <input type="date" id="quizData" placeholder="Data (AAAA-MM-DD)">
+        <input type="text" id="quizPergunta" placeholder="Pergunta">
+        <input type="text" id="quizAlt0" placeholder="Alternativa A">
+        <input type="text" id="quizAlt1" placeholder="Alternativa B">
+        <input type="text" id="quizAlt2" placeholder="Alternativa C">
+        <input type="text" id="quizAlt3" placeholder="Alternativa D">
+        <select id="quizCorreta">
+            <option value="0">Alternativa A</option>
+            <option value="1">Alternativa B</option>
+            <option value="2">Alternativa C</option>
+            <option value="3">Alternativa D</option>
+        </select>
+        <textarea id="quizExplicacao" rows="3" placeholder="Explicação da resposta correta"></textarea>
+        <label><input type="checkbox" id="quizAtivo" checked> Ativo</label>
+        <div>
+            <button id="salvarQuizBtn" class="btn">Salvar</button>
+            <button id="cancelarQuizBtn" class="btn btn-secondary">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<!-- TELA SIMULADO (idêntica à versão anterior) -->
 <div id="simulatorScreen" class="screen">
     <div style="padding: 1rem 1rem 0 1rem;">
         <button id="backToDashboard" class="btn back-btn"><i class="fas fa-arrow-left"></i> Voltar</button>
@@ -269,7 +315,7 @@
 </div>
 
 <script>
-    // ==================== INDEXEDDB (DEXIE) COM UPGRADE PARA QUIZZES ====================
+    // ==================== INDEXEDDB (DEXIE) COM UPGRADE PARA QUIZZES (mais exemplos) ====================
     const db = new Dexie("EstudandoTIDB");
     db.version(1).stores({
         usuarios: "++id, nome, email, senha, pontos, downloadsRestantes, ultimoSimulado, ultimaPontuacao, isAdmin, badges, historicoPontos",
@@ -282,22 +328,19 @@
     }).upgrade(tx => {
         tx.table('quizzes').count().then(count => {
             if (count === 0) {
-                // Inicializa quizzes para os próximos dias (exemplo)
                 const hoje = new Date();
-                const quizzesExemplo = [];
-                for (let i = 0; i < 7; i++) {
-                    const data = new Date(hoje);
-                    data.setDate(hoje.getDate() + i);
-                    const dataStr = data.toISOString().slice(0,10);
-                    quizzesExemplo.push({
-                        data: dataStr,
-                        pergunta: i === 0 ? "Qual das seguintes é uma característica do NoSQL?" : "Pergunta de exemplo para " + dataStr,
-                        alternativas: i === 0 ? ["Esquema fixo", "ACID estrito", "Escalabilidade horizontal", "Junções complexas"] : ["Alternativa A", "Alternativa B", "Alternativa C", "Alternativa D"],
-                        correta: i === 0 ? 2 : 0,
-                        explicacao: i === 0 ? "NoSQL é conhecido por escalabilidade horizontal, flexibilidade de esquema e alta performance para grandes volumes." : "Explicação de exemplo.",
-                        ativo: true
-                    });
-                }
+                const quizzesExemplo = [
+                    { data: new Date().toISOString().slice(0,10), pergunta: "Qual das seguintes é uma característica do NoSQL?", alternativas: ["Esquema fixo", "ACID estrito", "Escalabilidade horizontal", "Junções complexas"], correta: 2, explicacao: "NoSQL é conhecido por escalabilidade horizontal, flexibilidade de esquema e alta performance para grandes volumes.", ativo: true },
+                    { data: new Date(Date.now() + 86400000).toISOString().slice(0,10), pergunta: "O que significa a sigla LGPD?", alternativas: ["Lei Geral de Proteção de Dados", "Lei de Gestão de Projetos Digitais", "Lei de Governança Pública", "Lei de Dados Gerais"], correta: 0, explicacao: "LGPD é a Lei Geral de Proteção de Dados, que regulamenta o tratamento de dados pessoais no Brasil.", ativo: true },
+                    { data: new Date(Date.now() + 2*86400000).toISOString().slice(0,10), pergunta: "Em Kubernetes, qual recurso gerencia a réplica de Pods?", alternativas: ["Service", "Deployment", "ConfigMap", "Ingress"], correta: 1, explicacao: "Deployment é o recurso que gerencia réplicas de Pods, permitindo rollout e rollback.", ativo: true },
+                    { data: new Date(Date.now() + 3*86400000).toISOString().slice(0,10), pergunta: "Qual comando SQL é usado para remover uma tabela?", alternativas: ["DELETE", "DROP", "TRUNCATE", "REMOVE"], correta: 1, explicacao: "DROP TABLE remove a tabela e sua estrutura. DELETE remove linhas, mas mantém a tabela.", ativo: true },
+                    { data: new Date(Date.now() + 4*86400000).toISOString().slice(0,10), pergunta: "O que é um Data Warehouse?", alternativas: ["Repositório de dados brutos", "Sistema otimizado para consultas analíticas", "Banco de dados transacional", "Ferramenta de ETL"], correta: 1, explicacao: "Data Warehouse é um sistema otimizado para consultas e análises de dados históricos.", ativo: true },
+                    { data: new Date(Date.now() + 5*86400000).toISOString().slice(0,10), pergunta: "O que mede o F1-Score?", alternativas: ["Média harmônica entre precisão e recall", "Apenas precisão", "Apenas recall", "Acurácia balanceada"], correta: 0, explicacao: "F1-Score é a média harmônica entre precisão e recall, usada para avaliar classificadores em dados desbalanceados.", ativo: true },
+                    { data: new Date(Date.now() + 6*86400000).toISOString().slice(0,10), pergunta: "Qual é a função da camada softmax em redes neurais?", alternativas: ["Normalizar saídas em probabilidades", "Ativação ReLU", "Pooling", "Dropout"], correta: 0, explicacao: "Softmax converte os logits em probabilidades que somam 1, útil para classificação multiclasse.", ativo: true },
+                    { data: new Date(Date.now() + 7*86400000).toISOString().slice(0,10), pergunta: "O que é um Webhook?", alternativas: ["Callback HTTP", "API REST", "WebSocket", "Fila de mensagens"], correta: 0, explicacao: "Webhook é um mecanismo onde um sistema envia uma requisição HTTP para outro quando ocorre um evento.", ativo: true },
+                    { data: new Date(Date.now() + 8*86400000).toISOString().slice(0,10), pergunta: "O que é o padrão SOLID?", alternativas: ["Conjunto de princípios de orientação a objetos", "Framework front-end", "Metodologia ágil", "Padrão de projeto"], correta: 0, explicacao: "SOLID são cinco princípios de design de software para criar código mais manutenível.", ativo: true },
+                    { data: new Date(Date.now() + 9*86400000).toISOString().slice(0,10), pergunta: "O que significa CI/CD?", alternativas: ["Continuous Integration/Continuous Deployment", "Central Intelligence/Control Data", "Code Integration/Code Delivery", "Continuous Interface/Continuous Design"], correta: 0, explicacao: "CI/CD refere-se à integração contínua e entrega contínua, práticas de automação no desenvolvimento de software.", ativo: true }
+                ];
                 tx.table('quizzes').bulkAdd(quizzesExemplo);
             }
         });
@@ -341,6 +384,12 @@
         currentUser.senha = novaSenha;
         return atualizarUsuario(currentUser).then(() => { alert("Senha alterada com sucesso!"); return true; });
     }
+
+    // ==================== CRUD DE QUIZZES ====================
+    async function listarQuizzes() { return await db.quizzes.toArray(); }
+    async function adicionarQuiz(quiz) { return await db.quizzes.add(quiz); }
+    async function atualizarQuiz(id, quiz) { return await db.quizzes.update(id, quiz); }
+    async function excluirQuiz(id) { return await db.quizzes.delete(id); }
 
     // ==================== CONQUISTAS (BADGES) ====================
     const badgesDef = [
@@ -467,7 +516,7 @@
         { id: "ingles-tecnico", nome: "Inglês Técnico", icone: "language", pdf: null, disponivel: false }
     ];
 
-    // ==================== GERADOR DE QUESTÕES ====================
+    // ==================== GERADOR DE QUESTÕES (idêntico à versão anterior) ====================
     function obterQuestoesDaArea(areaId) {
         const topicosPorArea = {
             "cientista-dados": ["Regressão Linear", "Overfitting", "Validação Cruzada", "PCA", "Clusterização", "Redes Neurais", "Árvores de Decisão", "SVM", "Naive Bayes", "Ensemble", "Métricas de Avaliação", "SQL para Análise", "Data Warehouse", "Business Intelligence", "Estatística Descritiva", "Teste de Hipóteses", "Distribuições", "Deep Learning", "CNN", "RNN", "IA Generativa", "LLM", "Geoprocessamento", "LGPD", "Ética em IA", "Data Mining", "Visualização de Dados", "Big Data", "Spark", "ETL"],
@@ -563,7 +612,7 @@
         else adminBtn.style.display = 'none';
         renderBadges(currentUser);
         atualizarGrafico(currentUser);
-        await carregarQuizDiario(); // Carrega o quiz diário
+        await carregarQuizDiario();
         const container = document.getElementById('cardsGrid');
         container.innerHTML = '';
         areas.forEach(area => {
@@ -572,7 +621,6 @@
             const btnSimulado = area.disponivel ?
                 `<button class="btn start-simulado" data-area='${JSON.stringify(area)}'><i class="fas fa-play"></i> Simulado</button>` :
                 `<button class="btn btn-disabled" disabled><i class="fas fa-clock"></i> Em breve</button>`;
-            const btnEbook = (area.pdf && area.disponivel) ? `<button class="btn btn-secondary download-ebook" data-pdf="${area.pdf}"><i class="fas fa-book"></i> E-book</button>` : '';
             const btnStudyMode = area.disponivel ? `<button class="btn study-mode toggle-study-mode" data-area-id="${area.id}" style="background:#6c757d;"><i class="fas fa-graduation-cap"></i> Modo estudo</button>` : '';
             card.innerHTML = `
                 <div class="card-header"><i class="fas fa-${area.icone}"></i><h3>${area.nome}</h3></div>
@@ -580,7 +628,6 @@
                     <p>30 questões estilo FGV (cada acerto vale 5 pontos)</p>
                     <div class="btn-group">
                         ${btnSimulado}
-                        ${btnEbook}
                         ${btnStudyMode}
                     </div>
                     <div class="pdf-destaque"><i class="fas fa-gift"></i> 📘 Acertando 70% você ganha o PDF com 100 questões comentadas da área!</div>
@@ -592,12 +639,6 @@
             btn.addEventListener('click', (e) => {
                 const area = JSON.parse(btn.getAttribute('data-area'));
                 iniciarSimulado(area, false);
-            });
-        });
-        document.querySelectorAll('.download-ebook').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const pdf = btn.getAttribute('data-pdf');
-                window.open(pdf, '_blank');
             });
         });
         document.querySelectorAll('.toggle-study-mode').forEach(btn => {
@@ -622,7 +663,7 @@
         return atualizarRanking();
     }
 
-    // ==================== ADMIN CRUD ====================
+    // ==================== ADMIN CRUD (Usuários) ====================
     function renderAdminPanel() {
         return db.usuarios.toArray().then(usuarios => {
             const tbody = document.getElementById('userTableBody');
@@ -726,6 +767,107 @@
                 alert("Dados de exemplo gerados!");
             });
         });
+    });
+
+    // ==================== ADMIN QUIZZES ====================
+    async function renderAdminQuizzes() {
+        const quizzes = await listarQuizzes();
+        const tbody = document.getElementById('quizTableBody');
+        tbody.innerHTML = '';
+        quizzes.forEach(q => {
+            const row = tbody.insertRow();
+            row.insertCell(0).innerText = q.id;
+            row.insertCell(1).innerText = q.data;
+            row.insertCell(2).innerText = q.pergunta.substring(0, 50) + (q.pergunta.length > 50 ? '...' : '');
+            row.insertCell(3).innerText = q.alternativas.join(' | ');
+            row.insertCell(4).innerText = q.correta;
+            row.insertCell(5).innerHTML = q.ativo ? '✅ Ativo' : '❌ Inativo';
+            const actions = row.insertCell(6);
+            actions.innerHTML = `<button class="edit-quiz" data-id="${q.id}">Editar</button> <button class="delete-quiz" data-id="${q.id}">Excluir</button>`;
+        });
+        document.querySelectorAll('.edit-quiz').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const id = parseInt(btn.getAttribute('data-id'));
+                const quiz = await db.quizzes.get(id);
+                if (quiz) {
+                    document.getElementById('quizModalTitle').innerText = 'Editar Quiz';
+                    document.getElementById('quizData').value = quiz.data;
+                    document.getElementById('quizPergunta').value = quiz.pergunta;
+                    document.getElementById('quizAlt0').value = quiz.alternativas[0] || '';
+                    document.getElementById('quizAlt1').value = quiz.alternativas[1] || '';
+                    document.getElementById('quizAlt2').value = quiz.alternativas[2] || '';
+                    document.getElementById('quizAlt3').value = quiz.alternativas[3] || '';
+                    document.getElementById('quizCorreta').value = quiz.correta;
+                    document.getElementById('quizExplicacao').value = quiz.explicacao;
+                    document.getElementById('quizAtivo').checked = quiz.ativo;
+                    document.getElementById('salvarQuizBtn').onclick = async () => {
+                        const novasAlt = [
+                            document.getElementById('quizAlt0').value,
+                            document.getElementById('quizAlt1').value,
+                            document.getElementById('quizAlt2').value,
+                            document.getElementById('quizAlt3').value
+                        ];
+                        const novoQuiz = {
+                            data: document.getElementById('quizData').value,
+                            pergunta: document.getElementById('quizPergunta').value,
+                            alternativas: novasAlt,
+                            correta: parseInt(document.getElementById('quizCorreta').value),
+                            explicacao: document.getElementById('quizExplicacao').value,
+                            ativo: document.getElementById('quizAtivo').checked
+                        };
+                        await atualizarQuiz(id, novoQuiz);
+                        document.getElementById('quizModal').style.display = 'none';
+                        renderAdminQuizzes();
+                    };
+                    document.getElementById('quizModal').style.display = 'flex';
+                }
+            });
+        });
+        document.querySelectorAll('.delete-quiz').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const id = parseInt(btn.getAttribute('data-id'));
+                if (confirm("Excluir este quiz?")) {
+                    await excluirQuiz(id);
+                    renderAdminQuizzes();
+                }
+            });
+        });
+    }
+
+    document.getElementById('addQuizBtn')?.addEventListener('click', () => {
+        document.getElementById('quizModalTitle').innerText = 'Adicionar Quiz';
+        document.getElementById('quizData').value = new Date().toISOString().slice(0,10);
+        document.getElementById('quizPergunta').value = '';
+        document.getElementById('quizAlt0').value = '';
+        document.getElementById('quizAlt1').value = '';
+        document.getElementById('quizAlt2').value = '';
+        document.getElementById('quizAlt3').value = '';
+        document.getElementById('quizCorreta').value = '0';
+        document.getElementById('quizExplicacao').value = '';
+        document.getElementById('quizAtivo').checked = true;
+        document.getElementById('salvarQuizBtn').onclick = async () => {
+            const novasAlt = [
+                document.getElementById('quizAlt0').value,
+                document.getElementById('quizAlt1').value,
+                document.getElementById('quizAlt2').value,
+                document.getElementById('quizAlt3').value
+            ];
+            const novoQuiz = {
+                data: document.getElementById('quizData').value,
+                pergunta: document.getElementById('quizPergunta').value,
+                alternativas: novasAlt,
+                correta: parseInt(document.getElementById('quizCorreta').value),
+                explicacao: document.getElementById('quizExplicacao').value,
+                ativo: document.getElementById('quizAtivo').checked
+            };
+            await adicionarQuiz(novoQuiz);
+            document.getElementById('quizModal').style.display = 'none';
+            renderAdminQuizzes();
+        };
+        document.getElementById('quizModal').style.display = 'flex';
+    });
+    document.getElementById('cancelarQuizBtn')?.addEventListener('click', () => {
+        document.getElementById('quizModal').style.display = 'none';
     });
 
     // ==================== SIMULADO ====================
@@ -983,6 +1125,23 @@
         renderizarQuestao();
     });
 
+    // ==================== TABS ADMIN ====================
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const tab = btn.getAttribute('data-tab');
+            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+            if (tab === 'usuarios') {
+                document.getElementById('tabUsuarios').classList.add('active');
+                renderAdminPanel();
+            } else if (tab === 'quizzes') {
+                document.getElementById('tabQuizzes').classList.add('active');
+                renderAdminQuizzes();
+            }
+        });
+    });
+
     // ==================== INICIALIZAÇÃO ====================
     function iniciarApp() {
         inicializarDadosPadrao().then(() => {
@@ -1016,8 +1175,9 @@
         document.getElementById('registerSection').style.display = 'none';
     });
     document.getElementById('logoutBtn').addEventListener('click', logout);
-    document.getElementById('adminPanelBtn').addEventListener('click', () => {
-        renderAdminPanel().then(() => showScreen('adminScreen'));
+    document.getElementById('adminPanelBtn').addEventListener('click', async () => {
+        await renderAdminPanel();
+        showScreen('adminScreen');
     });
     document.getElementById('backFromAdmin').addEventListener('click', () => showScreen('dashboardScreen'));
     document.getElementById('backToDashboard').addEventListener('click', () => {
