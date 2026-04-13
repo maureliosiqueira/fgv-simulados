@@ -20,14 +20,17 @@
         .toggle-link { text-align: center; margin-top: 1rem; color: #0b5e7c; cursor: pointer; font-size: 0.85rem; text-decoration: underline; }
         .msg { text-align: center; margin-top: 0.5rem; font-size: 0.8rem; color: red; }
         .dashboard-header { background: #ffd966; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
-        .user-info { display: flex; align-items: center; gap: 1rem; }
-        .logout-btn, .admin-btn { background: #c0392b; padding: 0.3rem 1rem; border-radius: 2rem; font-size: 0.8rem; cursor: pointer; color: white; font-weight: 500; }
+        .user-info { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+        .logout-btn, .admin-btn, .change-pwd-btn { background: #c0392b; padding: 0.3rem 1rem; border-radius: 2rem; font-size: 0.8rem; cursor: pointer; color: white; font-weight: 500; }
         .admin-btn { background: #2c8fbb; }
+        .change-pwd-btn { background: #0b5e7c; }
         .two-columns { display: flex; flex-wrap: wrap; gap: 2rem; padding: 2rem; }
-        .ranking-panel { flex: 1; min-width: 250px; background: #f8fbfd; border-radius: 1.5rem; padding: 1.5rem; }
+        .ranking-panel { flex: 1; min-width: 280px; background: #f8fbfd; border-radius: 1.5rem; padding: 1.5rem; }
         .ranking-panel h3 { margin-bottom: 1rem; color: #0b5e7c; }
         .ranking-list { list-style: none; }
-        .ranking-list li { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #e2edf2; }
+        .ranking-list li { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #e2edf2; font-size: 0.9rem; }
+        .ranking-list li span:first-child { font-weight: 500; }
+        .ranking-list .small-date { font-size: 0.7rem; color: #2c6979; }
         .cards-grid { flex: 3; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
         .card { background: white; border-radius: 1.5rem; border: 1px solid #e2edf2; box-shadow: 0 5px 15px rgba(0,0,0,0.05); transition: transform 0.2s; }
         .card:hover { transform: translateY(-5px); }
@@ -44,12 +47,12 @@
         .social-icons a:hover { color: #ffaa33; }
         .hotmart-link { background: #ffaa33; color: #1e3b4a; padding: 0.3rem 1rem; border-radius: 2rem; display: inline-block; margin-top: 0.5rem; font-weight: bold; text-decoration: none; }
         .hotmart-link:hover { background: #0b5e7c; color: white; }
-        /* Admin e Simulado (estilos já definidos anteriormente, mantidos) */
-        .admin-panel { padding: 2rem; }
-        .admin-table { width: 100%; border-collapse: collapse; }
-        .admin-table th, .admin-table td { border: 1px solid #cde0e8; padding: 0.5rem; text-align: left; }
+        .admin-panel { padding: 2rem; overflow-x: auto; }
+        .admin-table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        .admin-table th, .admin-table td { border: 1px solid #cde0e8; padding: 0.5rem; text-align: left; vertical-align: middle; }
         .admin-table th { background: #f0f7fa; }
-        .admin-actions button { margin: 0 0.2rem; padding: 0.2rem 0.5rem; font-size: 0.7rem; }
+        .admin-table input { width: 100%; padding: 0.2rem; border: 1px solid #ccc; border-radius: 0.3rem; }
+        .admin-actions button { margin: 0 0.2rem; padding: 0.2rem 0.5rem; font-size: 0.7rem; cursor: pointer; }
         .simulator-header { background: linear-gradient(135deg,#0b2b44,#1b5e7a); color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
         .timer { background: #ffaa33; color: #1e3b4a; padding: 0.5rem 1.2rem; border-radius: 2rem; font-weight: 700; font-family: monospace; }
         .progress-bar { background: #e9ecef; height: 8px; }
@@ -69,6 +72,12 @@
         .results { background: #f0f7fa; border-radius: 1rem; padding: 1.5rem; margin: 0 2rem 2rem 2rem; display: none; }
         .score { font-size: 2rem; font-weight: 800; color: #0b5e7c; }
         .back-btn { background: #e2edf2; color: #1e3b4a; margin-bottom: 1rem; display: inline-block; cursor: pointer; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 2rem; border-radius: 1.5rem; max-width: 400px; width: 90%; }
+        .modal-content input { width: 100%; padding: 0.5rem; margin: 0.5rem 0; border: 1px solid #cde0e8; border-radius: 0.5rem; }
+        .modal-content button { margin-top: 1rem; }
+        .btn-download { background: #28a745; color: white; font-weight: bold; font-size: 1rem; padding: 0.6rem 1.5rem; }
+        .btn-download:hover { background: #218838; }
         @media (max-width:800px) { .simulator-content { flex-direction: column; } .nav-panel { position: static; } .two-columns { flex-direction: column; } }
     </style>
 </head>
@@ -114,6 +123,7 @@
         <div><i class="fab fa-youtube fa-2x" style="color:#c0392b;"></i> <strong>@EstudandoTI_Brasil</strong></div>
         <div class="user-info">
             <span id="userNameDisplay"></span>
+            <span class="change-pwd-btn" id="changePwdBtn"><i class="fas fa-key"></i> Alterar senha</span>
             <span class="admin-btn" id="adminPanelBtn" style="display:none;"><i class="fas fa-users-cog"></i> Admin</span>
             <span class="logout-btn" id="logoutBtn">Sair</span>
         </div>
@@ -122,6 +132,7 @@
         <div class="ranking-panel">
             <h3><i class="fas fa-trophy"></i> Ranking de Pontuação</h3>
             <ul id="rankingList" class="ranking-list"></ul>
+            <div style="margin-top:1rem; font-size:0.7rem; color:#2c6979;">Última simulação: data e pontuação</div>
         </div>
         <div class="cards-grid" id="cardsGrid"></div>
     </div>
@@ -143,9 +154,13 @@
         <div><span class="logout-btn" id="backFromAdmin">Voltar ao Dashboard</span></div>
     </div>
     <div class="admin-panel">
-        <button id="addUserBtn" class="btn" style="margin-bottom:1rem;"><i class="fas fa-plus"></i> Novo Usuário</button>
+        <div style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+            <button id="addUserBtn" class="btn"><i class="fas fa-plus"></i> Novo Usuário</button>
+            <button id="exportCsvBtn" class="btn" style="background: #28a745;"><i class="fas fa-file-csv"></i> Exportar CSV</button>
+            <button id="gerarDadosExemploBtn" class="btn" style="background: #ffaa33; color:#1e3b4a;"><i class="fas fa-dice-d6"></i> Gerar Dados de Exemplo</button>
+        </div>
         <table class="admin-table" id="userTable">
-            <thead><tr><th>ID</th><th>Nome</th><th>Email</th><th>Pontos</th><th>Downloads Rest.</th><th>Ações</th></tr></thead>
+            <thead><tr><th>ID</th><th>Nome</th><th>Email</th><th>Pontos</th><th>Downloads Rest.</th><th>Último Simulado (data)</th><th>Última Pontuação (%)</th><th>Ações</th></tr></thead>
             <tbody id="userTableBody"></tbody>
         </table>
     </div>
@@ -159,14 +174,14 @@
     </div>
 </div>
 
-<!-- TELA SIMULADO (dinâmica) -->
+<!-- TELA SIMULADO -->
 <div id="simulatorScreen" class="screen">
     <div style="padding: 1rem 1rem 0 1rem;">
         <button id="backToDashboard" class="btn back-btn"><i class="fas fa-arrow-left"></i> Voltar</button>
     </div>
     <div class="simulator-header">
         <h1 id="simulatorTitle"><i class="fas fa-brain"></i> Carregando...</h1>
-        <div class="timer" id="timerDisplay">04:00:00</div>
+        <div class="timer" id="timerDisplay">10:00</div>
     </div>
     <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
     <div class="simulator-content">
@@ -192,6 +207,18 @@
     </footer>
 </div>
 
+<!-- Modal para alterar senha -->
+<div id="changePwdModal" class="modal">
+    <div class="modal-content">
+        <h3>Alterar Senha</h3>
+        <input type="password" id="oldPassword" placeholder="Senha atual">
+        <input type="password" id="newPassword" placeholder="Nova senha">
+        <input type="password" id="confirmPassword" placeholder="Confirmar nova senha">
+        <button id="confirmChangePwd" class="btn">Salvar</button>
+        <button id="closeModal" class="btn btn-secondary" style="margin-left:0.5rem;">Cancelar</button>
+    </div>
+</div>
+
 <script>
     // ==================== GERENCIAMENTO DE USUÁRIOS ====================
     let currentUser = null;
@@ -206,9 +233,9 @@
         let usuarios = getUsuarios();
         if (usuarios.length === 0) {
             usuarios = [
-                { id: 1, nome: "Ana Carolina", email: "ana@teste.com", senha: "123", pontos: 98, ativo: true, downloadsRestantes: 3 },
-                { id: 2, nome: "Bruno Lima", email: "bruno@teste.com", senha: "123", pontos: 95, ativo: true, downloadsRestantes: 3 },
-                { id: 3, nome: "Admin", email: "admin@admin.com", senha: "admin123", pontos: 0, ativo: true, isAdmin: true, downloadsRestantes: 3 }
+                { id: 1, nome: "Ana Carolina", email: "ana@teste.com", senha: "123", pontos: 98, ativo: true, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null },
+                { id: 2, nome: "Bruno Lima", email: "bruno@teste.com", senha: "123", pontos: 95, ativo: true, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null },
+                { id: 3, nome: "Admin", email: "admin@admin.com", senha: "admin123", pontos: 0, ativo: true, isAdmin: true, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null }
             ];
             saveUsuarios(usuarios);
         }
@@ -220,7 +247,7 @@
         const usuarios = getUsuarios();
         if (usuarios.find(u => u.email === email)) return false;
         const novoId = usuarios.length ? Math.max(...usuarios.map(u => u.id)) + 1 : 1;
-        usuarios.push({ id: novoId, nome, email, senha, pontos: 0, ativo: true, downloadsRestantes: 3 });
+        usuarios.push({ id: novoId, nome, email, senha, pontos: 0, ativo: true, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null });
         saveUsuarios(usuarios);
         return true;
     }
@@ -239,6 +266,78 @@
         usuarios = usuarios.filter(u => u.id !== id);
         saveUsuarios(usuarios);
     }
+    function resetarSenha(id, novaSenha = "123") {
+        let usuarios = getUsuarios();
+        const user = usuarios.find(u => u.id === id);
+        if (user) {
+            user.senha = novaSenha;
+            saveUsuarios(usuarios);
+            alert(`Senha do usuário ${user.nome} redefinida para ${novaSenha}`);
+        }
+    }
+    function alterarMinhaSenha(senhaAtual, novaSenha) {
+        if (currentUser.senha !== senhaAtual) {
+            alert("Senha atual incorreta.");
+            return false;
+        }
+        if (novaSenha.length < 3) {
+            alert("A nova senha deve ter pelo menos 3 caracteres.");
+            return false;
+        }
+        currentUser.senha = novaSenha;
+        atualizarUsuario(currentUser);
+        alert("Senha alterada com sucesso!");
+        return true;
+    }
+
+    // ==================== EXPORTAR CSV ====================
+    function exportarCSV() {
+        const usuarios = getUsuarios().filter(u => u.ativo);
+        const cabecalho = ["Nome", "Email", "Pontos", "Downloads Restantes", "Ultimo Simulado", "Ultima Pontuacao (%)"];
+        const linhas = usuarios.map(u => [
+            u.nome,
+            u.email,
+            u.pontos || 0,
+            u.downloadsRestantes,
+            u.ultimoSimulado ? new Date(u.ultimoSimulado).toLocaleDateString() : "",
+            u.ultimaPontuacao || ""
+        ]);
+        const conteudoCSV = [cabecalho, ...linhas].map(row => row.map(cell => `"${cell}"`).join(",")).join("\n");
+        const blob = new Blob(["\uFEFF" + conteudoCSV], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.href = url;
+        link.setAttribute("download", "usuarios_export.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    // ==================== GERAR DADOS DE EXEMPLO ====================
+    function gerarDadosExemplo() {
+        let usuarios = getUsuarios();
+        const hoje = new Date();
+        usuarios = usuarios.map(u => {
+            if (u.isAdmin) return u; // não altera admin
+            // data aleatória nos últimos 30 dias
+            const diasAtras = Math.floor(Math.random() * 30);
+            const dataSimulado = new Date(hoje);
+            dataSimulado.setDate(hoje.getDate() - diasAtras);
+            const pontuacaoPercentual = Math.floor(Math.random() * 101); // 0 a 100
+            // Atualiza pontos com base na pontuação: cada questão vale 5 pontos, 30 questões, então pontuação máxima = 150
+            // pontos = (pontuacaoPercentual / 100) * 30 * 5 = pontuacaoPercentual * 1.5
+            const novosPontos = Math.floor(pontuacaoPercentual * 1.5);
+            u.ultimoSimulado = dataSimulado.toISOString();
+            u.ultimaPontuacao = pontuacaoPercentual;
+            u.pontos = novosPontos;
+            return u;
+        });
+        saveUsuarios(usuarios);
+        renderAdminPanel();
+        atualizarRanking();
+        alert("Dados de exemplo gerados com sucesso! (datas aleatórias e pontuações)");
+    }
 
     // ==================== DADOS DAS ÁREAS E PDFs ====================
     const areas = [
@@ -250,12 +349,23 @@
         { id: "analista-ux", nome: "Analista de UX", icone: "palette", pdf: "ebook-UX.pdf" }
     ];
 
-    // ==================== QUESTÕES (GERADOR DE 100 POR ÁREA) ====================
+    // ==================== GERADOR DE QUESTÕES (30, SEM DICAS E COM POSIÇÃO ALEATÓRIA) ====================
+    function embaralharOpcoes(opcoes, corretaOriginal) {
+        let items = opcoes.map((texto, idx) => ({ texto, isCorrect: idx === corretaOriginal }));
+        for (let i = items.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [items[i], items[j]] = [items[j], items[i]];
+        }
+        const novasOpcoes = items.map(item => item.texto);
+        const novoIndiceCorreto = items.findIndex(item => item.isCorrect);
+        return { options: novasOpcoes, correct: novoIndiceCorreto };
+    }
+
     function gerarQuestoes(areaId) {
         const base = [
             { text: "Em regressão linear simples, a soma dos resíduos é sempre igual a:", options: ["Zero", "Um", "Variância dos erros", "Média dos valores previstos", "Coeficiente angular"], correct: 0 },
             { text: "Sobre overfitting, assinale a alternativa correta:", options: ["Ocorre quando o modelo é muito simples", "Acontece quando o modelo tem alta variância e baixo viés", "É mitigado aumentando a complexidade", "Não afeta generalização", "Reduz acurácia no treino"], correct: 1 },
-            { text: "Qual métrica NÃO é indicada para problemas de classificação desbalanceada?", options: ["Acurácia", "Precision", "Recall", "F1-Score", "AUC-ROC"], correct: 0 },
+            { text: "Qual métrica NÃO é indicada para problemas de classificação desbalanceada?", options: ["Acurácia", "Precisão", "Recall", "F1-Score", "AUC-ROC"], correct: 0 },
             { text: "Na validação cruzada k-fold, o que significa k=5?", options: ["5 partições, treina em 4 e valida em 1", "80% treino e 20% teste", "5 épocas de treinamento", "Amostragem estratificada", "5 árvores na Random Forest"], correct: 0 },
             { text: "Random Forest é um ensemble do tipo:", options: ["Boosting", "Bagging", "Stacking", "Voting ponderado", "AdaBoost"], correct: 1 },
             { text: "O PCA é usado principalmente para:", options: ["Classificação supervisionada", "Redução de dimensionalidade", "Clusterização hierárquica", "Regras de associação", "Detecção de outliers"], correct: 1 },
@@ -264,16 +374,29 @@
             { text: "A Lei nº 14.133/2021 trata de:", options: ["Proteção de dados", "Licitações e contratos administrativos", "Direitos autorais", "Marco Civil da Internet", "LGPD"], correct: 1 },
             { text: "No Kubernetes, um Deployment gerencia:", options: ["Configurações de rede", "Replicação e rollout de Pods", "Volumes persistentes", "Ingress", "Service Mesh"], correct: 1 }
         ];
-        let questoes = base.map(q => ({ text: q.text, options: q.options.map((opt,idx)=> `${String.fromCharCode(65+idx)}) ${opt}`), correct: q.correct }));
+        let questoes = [];
+        for (let q of base) {
+            const shuffled = embaralharOpcoes(q.options, q.correct);
+            questoes.push({
+                text: q.text,
+                options: shuffled.options.map((opt, idx) => `${String.fromCharCode(65+idx)}) ${opt}`),
+                correct: shuffled.correct
+            });
+        }
         const topics = ["Regressão Logística","Árvores","SVM","Naive Bayes","K-NN","Ensembles","Validação Cruzada","Otimização","Métricas","K-means","Redes Neurais","SQL","Data Warehouse","Data Lake","Spark","Docker","Kubernetes","LGPD","DevOps","UX"];
-        for (let i = questoes.length; i < 100; i++) {
+        for (let i = questoes.length; i < 30; i++) {
             let tema = topics[i % topics.length];
             let texto = `Sobre ${tema}, assinale a alternativa correta:`;
-            let opcoes = [`Conceito incorreto sobre ${tema}`, `Definição precisa de ${tema} (correta)`, `Afirmação parcial`, `Exemplo prático`, `Detalhe avançado`];
-            let correta = 1;
-            if (tema === "SQL") { texto = "Qual comando remove uma tabela?"; opcoes = ["DELETE TABLE", "DROP TABLE", "TRUNCATE", "REMOVE", "ERASE"]; correta=1; }
-            if (tema === "Data Lake") { texto = "O que é um Data Lake?"; opcoes = ["Dados brutos sem esquema rígido", "Banco relacional", "Ferramenta ETL", "Data Warehouse", "Sistema de arquivos"]; correta=0; }
-            questoes.push({ text: texto, options: opcoes.map((opt,idx)=> `${String.fromCharCode(65+idx)}) ${opt}`), correct: correta });
+            let opcoesBase = [`Conceito incorreto sobre ${tema}`, `Definição precisa de ${tema}`, `Afirmação parcial`, `Exemplo prático`, `Detalhe avançado`];
+            let corretaOriginal = 1;
+            if (tema === "SQL") { texto = "Qual comando remove uma tabela?"; opcoesBase = ["DELETE TABLE", "DROP TABLE", "TRUNCATE", "REMOVE", "ERASE"]; corretaOriginal = 1; }
+            if (tema === "Data Lake") { texto = "O que é um Data Lake?"; opcoesBase = ["Dados brutos sem esquema rígido", "Banco relacional", "Ferramenta ETL", "Data Warehouse", "Sistema de arquivos"]; corretaOriginal = 0; }
+            const shuffled = embaralharOpcoes(opcoesBase, corretaOriginal);
+            questoes.push({
+                text: texto,
+                options: shuffled.options.map((opt, idx) => `${String.fromCharCode(65+idx)}) ${opt}`),
+                correct: shuffled.correct
+            });
         }
         return questoes;
     }
@@ -284,7 +407,14 @@
         usuarios.sort((a,b) => (b.pontos || 0) - (a.pontos || 0));
         const rankingList = document.getElementById('rankingList');
         if (rankingList) {
-            rankingList.innerHTML = usuarios.slice(0,10).map(u => `<li><span>${u.nome}</span><span>${u.pontos || 0} pts</span></li>`).join('');
+            rankingList.innerHTML = usuarios.slice(0,10).map(u => {
+                let dataInfo = '';
+                if (u.ultimoSimulado) {
+                    const data = new Date(u.ultimoSimulado);
+                    dataInfo = `<span class="small-date">${data.toLocaleDateString()} - ${u.ultimaPontuacao || 0}%</span>`;
+                }
+                return `<li><span>${u.nome} (${u.pontos || 0} pts)</span>${dataInfo}</li>`;
+            }).join('');
         }
     }
 
@@ -302,7 +432,7 @@
             card.innerHTML = `
                 <div class="card-header"><i class="fas fa-${area.icone}"></i><h3>${area.nome}</h3></div>
                 <div class="card-body">
-                    <p>100 questões estilo FGV</p>
+                    <p>30 questões estilo FGV (cada acerto vale 5 pontos)</p>
                     <div class="btn-group">
                         <button class="btn start-simulado" data-area='${JSON.stringify(area)}'><i class="fas fa-play"></i> Simulado</button>
                         <button class="btn btn-secondary download-ebook" data-pdf="${area.pdf}"><i class="fas fa-book"></i> E-book</button>
@@ -327,7 +457,7 @@
         atualizarRanking();
     }
 
-    // ==================== ADMIN CRUD ====================
+    // ==================== ADMIN CRUD COM EDIÇÃO DE DATA E PONTUAÇÃO ====================
     function renderAdminPanel() {
         const usuarios = getUsuarios();
         const tbody = document.getElementById('userTableBody');
@@ -335,13 +465,23 @@
         usuarios.forEach(u => {
             const row = tbody.insertRow();
             row.insertCell(0).innerText = u.id;
-            row.insertCell(1).innerHTML = `<input type="text" value="${u.nome}" class="edit-nome" data-id="${u.id}">`;
-            row.insertCell(2).innerHTML = `<input type="email" value="${u.email}" class="edit-email" data-id="${u.id}">`;
-            row.insertCell(3).innerHTML = `<input type="number" value="${u.pontos || 0}" class="edit-pontos" data-id="${u.id}">`;
-            row.insertCell(4).innerHTML = `<input type="number" value="${u.downloadsRestantes}" class="edit-downloads" data-id="${u.id}">`;
-            const actions = row.insertCell(5);
-            actions.innerHTML = `<button class="save-user" data-id="${u.id}">Salvar</button> <button class="delete-user" data-id="${u.id}">Excluir</button>`;
+            row.insertCell(1).innerHTML = `<input type="text" value="${u.nome}" class="edit-nome" data-id="${u.id}" style="width:100%;">`;
+            row.insertCell(2).innerHTML = `<input type="email" value="${u.email}" class="edit-email" data-id="${u.id}" style="width:100%;">`;
+            row.insertCell(3).innerHTML = `<input type="number" value="${u.pontos || 0}" class="edit-pontos" data-id="${u.id}" style="width:80px;">`;
+            row.insertCell(4).innerHTML = `<input type="number" value="${u.downloadsRestantes}" class="edit-downloads" data-id="${u.id}" style="width:80px;">`;
+            // Data do último simulado (input date)
+            const dataValue = u.ultimoSimulado ? new Date(u.ultimoSimulado).toISOString().split('T')[0] : '';
+            row.insertCell(5).innerHTML = `<input type="date" value="${dataValue}" class="edit-data" data-id="${u.id}" style="width:130px;">`;
+            // Última pontuação (%)
+            row.insertCell(6).innerHTML = `<input type="number" step="1" min="0" max="100" value="${u.ultimaPontuacao || 0}" class="edit-pontuacao" data-id="${u.id}" style="width:80px;">`;
+            const actions = row.insertCell(7);
+            actions.innerHTML = `
+                <button class="save-user" data-id="${u.id}">Salvar</button>
+                <button class="reset-pwd" data-id="${u.id}">Reset Senha</button>
+                <button class="delete-user" data-id="${u.id}">Excluir</button>
+            `;
         });
+        // Salvar alterações
         document.querySelectorAll('.save-user').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const id = parseInt(btn.getAttribute('data-id'));
@@ -349,6 +489,8 @@
                 const email = document.querySelector(`.edit-email[data-id="${id}"]`).value;
                 const pontos = parseInt(document.querySelector(`.edit-pontos[data-id="${id}"]`).value);
                 const downloads = parseInt(document.querySelector(`.edit-downloads[data-id="${id}"]`).value);
+                const dataStr = document.querySelector(`.edit-data[data-id="${id}"]`).value;
+                const pontuacao = parseInt(document.querySelector(`.edit-pontuacao[data-id="${id}"]`).value);
                 let usuarios = getUsuarios();
                 const index = usuarios.findIndex(u => u.id === id);
                 if (index !== -1) {
@@ -356,6 +498,8 @@
                     usuarios[index].email = email;
                     usuarios[index].pontos = pontos;
                     usuarios[index].downloadsRestantes = downloads;
+                    usuarios[index].ultimoSimulado = dataStr ? new Date(dataStr).toISOString() : null;
+                    usuarios[index].ultimaPontuacao = isNaN(pontuacao) ? 0 : pontuacao;
                     saveUsuarios(usuarios);
                     if (currentUser.id === id) {
                         currentUser = usuarios[index];
@@ -366,6 +510,14 @@
                 }
             });
         });
+        // Reset senha
+        document.querySelectorAll('.reset-pwd').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(btn.getAttribute('data-id'));
+                resetarSenha(id, "123");
+            });
+        });
+        // Excluir
         document.querySelectorAll('.delete-user').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const id = parseInt(btn.getAttribute('data-id'));
@@ -390,12 +542,14 @@
             } else alert("E-mail já existe.");
         }
     });
+    document.getElementById('exportCsvBtn')?.addEventListener('click', exportarCSV);
+    document.getElementById('gerarDadosExemploBtn')?.addEventListener('click', gerarDadosExemplo);
 
-    // ==================== SIMULADO ====================
+    // ==================== SIMULADO (30 questões, 10 minutos, pontuação 5 por acerto) ====================
     let questoesAtuais = [];
     let respostas = [];
     let indiceAtual = 0;
-    let tempoRestante = 4*3600;
+    let tempoRestante = 600;
     let timerInterval = null;
     let simuladoFinalizado = false;
     let areaAtual = null;
@@ -411,15 +565,16 @@
         if (saved) {
             const data = JSON.parse(saved);
             respostas = data.respostas || new Array(questoesAtuais.length).fill(null);
-            tempoRestante = data.tempoRestante ?? (4*3600);
+            tempoRestante = data.tempoRestante ?? 600;
             indiceAtual = data.indiceAtual ?? 0;
         } else {
             respostas = new Array(questoesAtuais.length).fill(null);
         }
     }
     function formatarTempo(s) {
-        let h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
-        return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`;
+        let m = Math.floor(s / 60);
+        let seg = s % 60;
+        return `${m.toString().padStart(2,'0')}:${seg.toString().padStart(2,'0')}`;
     }
     function atualizarTimerUI() { document.getElementById('timerDisplay').innerText = formatarTempo(tempoRestante); }
     function iniciarTimer() {
@@ -491,9 +646,11 @@
             if (respostas[i] !== null && respostas[i] === questoesAtuais[i].correct) acertos++;
         }
         const percentual = (acertos / questoesAtuais.length) * 100;
-        const pontosGanhos = Math.floor(percentual);
+        const pontosGanhos = acertos * 5;  // 5 pontos por questão acertada
         if (pontosGanhos > 0) {
             currentUser.pontos += pontosGanhos;
+            currentUser.ultimoSimulado = new Date().toISOString();
+            currentUser.ultimaPontuacao = percentual.toFixed(1);
             atualizarUsuario(currentUser);
         }
         const resultsDiv = document.getElementById('resultsPanel');
@@ -501,33 +658,41 @@
         let botoes = '';
         if (percentual >= 70) {
             if (currentUser.downloadsRestantes > 0) {
-                botoes = `<button id="downloadPdfBtn" style="background:#28a745; margin-top:1rem;"><i class="fas fa-download"></i> Baixar E-book (restam ${currentUser.downloadsRestantes})</button>`;
+                botoes = `<button id="downloadPdfBtn" class="btn btn-download" style="margin-top:1rem;"><i class="fas fa-download"></i> 📥 Baixar E-book (restam ${currentUser.downloadsRestantes})</button>`;
             } else {
                 botoes = `<p style="color:#c0392b;">⚠️ Você atingiu 70%, mas não tem mais downloads disponíveis.</p>`;
             }
         } else {
-            botoes = `<p style="color:#c0392b;">🔒 Atingiu ${percentual.toFixed(1)}% – mínimo 70% para baixar o PDF.</p>`;
+            botoes = `<p style="color:#c0392b;">🔒 Atingiu ${percentual.toFixed(1)}% – mínimo 70% para baixar o PDF.</p>
+                       <p><i class="fab fa-youtube"></i> <a href="https://www.youtube.com/@EstudandoTI_Brasil" target="_blank" style="color:#0b5e7c;">Assista as aulas no Youtube</a> para melhorar seu desempenho!</p>`;
         }
         resultsDiv.innerHTML = `
             <h3>Resultado Final</h3>
             <div class="score">${acertos}/${questoesAtuais.length} (${percentual.toFixed(1)}%)</div>
-            <p>+${pontosGanhos} pontos adicionados.</p>
+            <p>+${pontosGanhos} pontos (${acertos} acertos × 5)</p>
             ${botoes}
-            <button id="restartBtn" style="margin-top:1rem;"><i class="fas fa-sync-alt"></i> Refazer Simulado</button>
+            <button id="restartBtn" class="btn" style="margin-top:1rem;"><i class="fas fa-sync-alt"></i> Refazer Simulado</button>
         `;
         document.getElementById('restartBtn')?.addEventListener('click', () => {
             localStorage.removeItem(storageKey);
             iniciarSimulado(areaAtual);
         });
         if (percentual >= 70 && currentUser.downloadsRestantes > 0) {
-            document.getElementById('downloadPdfBtn')?.addEventListener('click', () => {
-                if (currentUser.downloadsRestantes > 0) {
-                    currentUser.downloadsRestantes--;
-                    atualizarUsuario(currentUser);
-                    alert(`Download liberado! Restam ${currentUser.downloadsRestantes} downloads.`);
-                    window.open(areaAtual.pdf, '_blank');
-                } else alert("Sem downloads disponíveis.");
-            });
+            const downloadBtn = document.getElementById('downloadPdfBtn');
+            if (downloadBtn) {
+                downloadBtn.addEventListener('click', () => {
+                    if (currentUser.downloadsRestantes > 0) {
+                        currentUser.downloadsRestantes--;
+                        atualizarUsuario(currentUser);
+                        alert(`Download liberado! Restam ${currentUser.downloadsRestantes} downloads.`);
+                        try {
+                            window.open(areaAtual.pdf, '_blank');
+                        } catch(e) {
+                            alert("Erro ao abrir o PDF. Verifique se o arquivo existe na pasta correta.");
+                        }
+                    } else alert("Sem downloads disponíveis.");
+                });
+            }
         }
         document.getElementById('submitBtn').disabled = true;
         document.getElementById('submitBtn').style.opacity = '0.6';
@@ -540,7 +705,7 @@
         storageKey = `simulado_${area.id}_${currentUser.id}`;
         carregarProgressoSimulado();
         simuladoFinalizado = false;
-        if (!localStorage.getItem(storageKey)) tempoRestante = 4*3600;
+        if (!localStorage.getItem(storageKey)) tempoRestante = 600;
         atualizarTimerUI();
         if (timerInterval) clearInterval(timerInterval);
         iniciarTimer();
@@ -555,6 +720,7 @@
         document.getElementById('prevBtn').onclick = () => { if (indiceAtual > 0 && !simuladoFinalizado) { indiceAtual--; renderizarQuestao(); atualizarNavegacaoUI(); salvarProgressoSimulado(); } };
         document.getElementById('nextBtn').onclick = () => { if (indiceAtual < questoesAtuais.length-1 && !simuladoFinalizado) { indiceAtual++; renderizarQuestao(); atualizarNavegacaoUI(); salvarProgressoSimulado(); } };
         document.getElementById('submitBtn').onclick = () => { if (confirm("Finalizar simulado?")) finalizarSimulado(); };
+        showScreen('simulatorScreen');
     }
 
     // ==================== CONTROLE DE TELAS ====================
@@ -599,6 +765,30 @@
         localStorage.removeItem('usuarioLogado');
         location.reload();
     }
+
+    // ==================== MODAL ALTERAR SENHA ====================
+    const modal = document.getElementById('changePwdModal');
+    document.getElementById('changePwdBtn').addEventListener('click', () => {
+        modal.style.display = 'flex';
+    });
+    document.getElementById('closeModal').addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+    document.getElementById('confirmChangePwd').addEventListener('click', () => {
+        const oldPwd = document.getElementById('oldPassword').value;
+        const newPwd = document.getElementById('newPassword').value;
+        const confirmPwd = document.getElementById('confirmPassword').value;
+        if (newPwd !== confirmPwd) {
+            alert("Nova senha e confirmação não conferem.");
+            return;
+        }
+        if (alterarMinhaSenha(oldPwd, newPwd)) {
+            modal.style.display = 'none';
+            document.getElementById('oldPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+        }
+    });
 
     // ==================== INICIALIZAÇÃO ====================
     inicializarUsuarios();
