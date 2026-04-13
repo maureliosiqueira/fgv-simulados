@@ -39,12 +39,12 @@
         .card-body { padding: 1rem; }
         .btn-group { display: flex; gap: 0.6rem; margin-top: 1rem; }
         .btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.4rem 1rem; border-radius: 2rem; text-decoration: none; font-weight: 600; font-size: 0.8rem; background: #0b5e7c; color: white; cursor: pointer; border: none; }
-        .btn-secondary { background: #e2edf2; color: #1e3b4a; }
-        .pdf-destaque { background: #ffecb3; border-radius: 1rem; padding: 0.5rem; margin-top: 0.8rem; font-size: 0.7rem; text-align: center; color: #b45f06; }
+        .pdf-destaque { background: #ffecb3; border-radius: 1rem; padding: 0.5rem; margin-top: 0.8rem; font-size: 0.75rem; text-align: center; color: #b45f06; font-weight: 500; }
         .footer-links { background: #e9f0f4; padding: 1rem; text-align: center; font-size: 0.8rem; border-top: 1px solid #cde0e8; }
         .social-icons { display: flex; justify-content: center; gap: 1.5rem; margin-bottom: 0.5rem; }
         .social-icons a { color: #0b5e7c; font-size: 1.4rem; transition: 0.2s; }
         .social-icons a:hover { color: #ffaa33; }
+        .social-text { font-size: 0.7rem; color: #2c6979; margin-bottom: 0.3rem; }
         .hotmart-link { background: #ffaa33; color: #1e3b4a; padding: 0.3rem 1rem; border-radius: 2rem; display: inline-block; margin-top: 0.5rem; font-weight: bold; text-decoration: none; }
         .hotmart-link:hover { background: #0b5e7c; color: white; }
         .admin-panel { padding: 2rem; overflow-x: auto; }
@@ -108,6 +108,7 @@
         </div>
     </div>
     <div class="footer-links">
+        <div class="social-text">Siga-nos nas redes sociais</div>
         <div class="social-icons">
             <a href="https://www.youtube.com/@EstudandoTI_Brasil" target="_blank"><i class="fab fa-youtube"></i></a>
             <a href="https://www.tiktok.com/@trilha_dos_saberes" target="_blank"><i class="fab fa-tiktok"></i></a>
@@ -137,17 +138,18 @@
         <div class="cards-grid" id="cardsGrid"></div>
     </div>
     <div class="footer-links">
+        <div class="social-text">Siga-nos nas redes sociais</div>
         <div class="social-icons">
             <a href="https://www.youtube.com/@EstudandoTI_Brasil" target="_blank"><i class="fab fa-youtube"></i></a>
             <a href="https://www.tiktok.com/@trilha_dos_saberes" target="_blank"><i class="fab fa-tiktok"></i></a>
             <a href="https://www.instagram.com/marcoa_siqueira/" target="_blank"><i class="fab fa-instagram"></i></a>
         </div>
         <a href="https://marcoa-siqueira.hotmart.host/produtos-digitais-f2cf5e8a-5039-4492-b5b0-4de78496eab9" target="_blank" class="hotmart-link">📘 Conheça todos os PDFs e materiais exclusivos</a>
-        <p style="margin-top:0.5rem; font-size:0.7rem;">Acertando 70% ou mais em qualquer simulado você ganha o PDF da área gratuitamente!</p>
+        <p style="margin-top:0.5rem; font-size:0.7rem;">Acertando 70% ou mais em qualquer simulado você ganha o PDF com 100 questões comentadas da área!</p>
     </div>
 </div>
 
-<!-- TELA ADMIN (CRUD de usuários) -->
+<!-- TELA ADMIN -->
 <div id="adminScreen" class="screen">
     <div class="dashboard-header">
         <div><i class="fas fa-users-cog"></i> Painel de Controle - Admin</div>
@@ -165,6 +167,7 @@
         </table>
     </div>
     <div class="footer-links">
+        <div class="social-text">Siga-nos nas redes sociais</div>
         <div class="social-icons">
             <a href="https://www.youtube.com/@EstudandoTI_Brasil" target="_blank"><i class="fab fa-youtube"></i></a>
             <a href="https://www.tiktok.com/@trilha_dos_saberes" target="_blank"><i class="fab fa-tiktok"></i></a>
@@ -198,6 +201,7 @@
     </div>
     <div id="resultsPanel" class="results"></div>
     <footer class="footer-links" style="border-radius:0 0 1.5rem 1.5rem;">
+        <div class="social-text">Siga-nos nas redes sociais</div>
         <div class="social-icons">
             <a href="https://www.youtube.com/@EstudandoTI_Brasil" target="_blank"><i class="fab fa-youtube"></i></a>
             <a href="https://www.tiktok.com/@trilha_dos_saberes" target="_blank"><i class="fab fa-tiktok"></i></a>
@@ -207,7 +211,7 @@
     </footer>
 </div>
 
-<!-- Modal para alterar senha -->
+<!-- Modal alterar senha -->
 <div id="changePwdModal" class="modal">
     <div class="modal-content">
         <h3>Alterar Senha</h3>
@@ -222,13 +226,8 @@
 <script>
     // ==================== GERENCIAMENTO DE USUÁRIOS ====================
     let currentUser = null;
-
-    function getUsuarios() {
-        return JSON.parse(localStorage.getItem('usuarios_sistema') || '[]');
-    }
-    function saveUsuarios(usuarios) {
-        localStorage.setItem('usuarios_sistema', JSON.stringify(usuarios));
-    }
+    function getUsuarios() { return JSON.parse(localStorage.getItem('usuarios_sistema') || '[]'); }
+    function saveUsuarios(usuarios) { localStorage.setItem('usuarios_sistema', JSON.stringify(usuarios)); }
     function inicializarUsuarios() {
         let usuarios = getUsuarios();
         if (usuarios.length === 0) {
@@ -240,9 +239,7 @@
             saveUsuarios(usuarios);
         }
     }
-    function autenticar(email, senha) {
-        return getUsuarios().find(u => u.email === email && u.senha === senha && u.ativo);
-    }
+    function autenticar(email, senha) { return getUsuarios().find(u => u.email === email && u.senha === senha && u.ativo); }
     function adicionarUsuario(nome, email, senha) {
         const usuarios = getUsuarios();
         if (usuarios.find(u => u.email === email)) return false;
@@ -269,64 +266,36 @@
     function resetarSenha(id, novaSenha = "123") {
         let usuarios = getUsuarios();
         const user = usuarios.find(u => u.id === id);
-        if (user) {
-            user.senha = novaSenha;
-            saveUsuarios(usuarios);
-            alert(`Senha do usuário ${user.nome} redefinida para ${novaSenha}`);
-        }
+        if (user) { user.senha = novaSenha; saveUsuarios(usuarios); alert(`Senha do usuário ${user.nome} redefinida para ${novaSenha}`); }
     }
     function alterarMinhaSenha(senhaAtual, novaSenha) {
-        if (currentUser.senha !== senhaAtual) {
-            alert("Senha atual incorreta.");
-            return false;
-        }
-        if (novaSenha.length < 3) {
-            alert("A nova senha deve ter pelo menos 3 caracteres.");
-            return false;
-        }
+        if (currentUser.senha !== senhaAtual) { alert("Senha atual incorreta."); return false; }
+        if (novaSenha.length < 3) { alert("A nova senha deve ter pelo menos 3 caracteres."); return false; }
         currentUser.senha = novaSenha;
         atualizarUsuario(currentUser);
         alert("Senha alterada com sucesso!");
         return true;
     }
-
-    // ==================== EXPORTAR CSV ====================
     function exportarCSV() {
         const usuarios = getUsuarios().filter(u => u.ativo);
         const cabecalho = ["Nome", "Email", "Pontos", "Downloads Restantes", "Ultimo Simulado", "Ultima Pontuacao (%)"];
-        const linhas = usuarios.map(u => [
-            u.nome,
-            u.email,
-            u.pontos || 0,
-            u.downloadsRestantes,
-            u.ultimoSimulado ? new Date(u.ultimoSimulado).toLocaleDateString() : "",
-            u.ultimaPontuacao || ""
-        ]);
+        const linhas = usuarios.map(u => [u.nome, u.email, u.pontos||0, u.downloadsRestantes, u.ultimoSimulado ? new Date(u.ultimoSimulado).toLocaleDateString() : "", u.ultimaPontuacao||""]);
         const conteudoCSV = [cabecalho, ...linhas].map(row => row.map(cell => `"${cell}"`).join(",")).join("\n");
         const blob = new Blob(["\uFEFF" + conteudoCSV], { type: "text/csv;charset=utf-8;" });
         const link = document.createElement("a");
         const url = URL.createObjectURL(blob);
         link.href = url;
         link.setAttribute("download", "usuarios_export.csv");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url);
     }
-
-    // ==================== GERAR DADOS DE EXEMPLO ====================
     function gerarDadosExemplo() {
         let usuarios = getUsuarios();
         const hoje = new Date();
         usuarios = usuarios.map(u => {
-            if (u.isAdmin) return u; // não altera admin
-            // data aleatória nos últimos 30 dias
+            if (u.isAdmin) return u;
             const diasAtras = Math.floor(Math.random() * 30);
-            const dataSimulado = new Date(hoje);
-            dataSimulado.setDate(hoje.getDate() - diasAtras);
-            const pontuacaoPercentual = Math.floor(Math.random() * 101); // 0 a 100
-            // Atualiza pontos com base na pontuação: cada questão vale 5 pontos, 30 questões, então pontuação máxima = 150
-            // pontos = (pontuacaoPercentual / 100) * 30 * 5 = pontuacaoPercentual * 1.5
+            const dataSimulado = new Date(hoje); dataSimulado.setDate(hoje.getDate() - diasAtras);
+            const pontuacaoPercentual = Math.floor(Math.random() * 101);
             const novosPontos = Math.floor(pontuacaoPercentual * 1.5);
             u.ultimoSimulado = dataSimulado.toISOString();
             u.ultimaPontuacao = pontuacaoPercentual;
@@ -336,10 +305,10 @@
         saveUsuarios(usuarios);
         renderAdminPanel();
         atualizarRanking();
-        alert("Dados de exemplo gerados com sucesso! (datas aleatórias e pontuações)");
+        alert("Dados de exemplo gerados!");
     }
 
-    // ==================== DADOS DAS ÁREAS E PDFs ====================
+    // ==================== ÁREAS E PDFs ====================
     const areas = [
         { id: "cientista-dados", nome: "Cientista de Dados", icone: "brain", pdf: "ebook-cientista-dados.pdf" },
         { id: "engenheiro-dados", nome: "Engenheiro de Dados", icone: "database", pdf: "ebook-Engenheiro-Dados.pdf" },
@@ -349,56 +318,75 @@
         { id: "analista-ux", nome: "Analista de UX", icone: "palette", pdf: "ebook-UX.pdf" }
     ];
 
-    // ==================== GERADOR DE QUESTÕES (30, SEM DICAS E COM POSIÇÃO ALEATÓRIA) ====================
-    function embaralharOpcoes(opcoes, corretaOriginal) {
-        let items = opcoes.map((texto, idx) => ({ texto, isCorrect: idx === corretaOriginal }));
+    // ==================== GERADOR DE QUESTÕES ESPECÍFICAS POR ÁREA (SEM DICAS) ====================
+    function obterQuestoesDaArea(areaId) {
+        const topicosPorArea = {
+            "cientista-dados": ["Regressão Linear", "Overfitting", "Validação Cruzada", "PCA", "Clusterização", "Redes Neurais", "Árvores de Decisão", "SVM", "Naive Bayes", "Ensemble", "Métricas de Avaliação", "SQL para Análise", "Data Warehouse", "Business Intelligence", "Estatística Descritiva", "Teste de Hipóteses", "Distribuições", "Deep Learning", "CNN", "RNN", "IA Generativa", "LLM", "Geoprocessamento", "LGPD", "Ética em IA", "Data Mining", "Visualização de Dados", "Big Data", "Spark", "ETL"],
+            "engenheiro-dados": ["Modelagem Dimensional", "SQL Avançado", "NoSQL", "Data Lake", "Data Warehouse", "ETL/ELT", "Cloud (AWS, GCP, Azure)", "Orquestração (Airflow)", "Governança de Dados", "Data Quality", "Streaming (Kafka)", "Processamento Distribuído (Spark)", "Bancos Colunares", "Bancos de Grafos", "Data Mesh", "Data Fabric", "Python para Dados", "Pandas", "Docker", "Kubernetes", "Terraform", "CI/CD para Dados", "Data Catalog", "Data Lineage", "Privacidade", "LGPD", "Arquitetura Lambda", "Arquitetura Kappa", "DataOps", "Data Observability"],
+            "analista-seguranca": ["LGPD", "IAM", "Firewalls", "DevSecOps", "Criptografia", "Resposta a Incidentes", "SIEM", "ISO 27001", "Políticas de Segurança", "Análise de Vulnerabilidades", "Testes de Invasão", "Segurança em Nuvem", "Zero Trust", "MFA", "Backup e Recuperação", "DLP", "GDPR", "Segurança em APIs", "OWASP", "Web Application Firewall", "IDS/IPS", "Segurança em Containers", "Segurança em Redes", "Phishing", "Engenharia Social", "Blockchain", "Assinatura Digital", "PKI", "Logging e Monitoramento", "BCP/DRP"],
+            "analista-infraestrutura": ["Data Centers", "Virtualização", "Containers", "Redes (TCP/IP, DNS, DHCP)", "Storage (SAN, NAS)", "Cloud (IaaS, PaaS, SaaS)", "Orquestração (Kubernetes)", "Infraestrutura como Código", "Terraform", "Ansible", "Monitoramento (Prometheus, Grafana)", "Backup e Restauração", "Alta Disponibilidade", "Balanceamento de Carga", "Firewalls de Rede", "SDN", "Infraestrutura Híbrida", "Edge Computing", "Serverless", "Disaster Recovery", "Rack e Cabling", "Energia e Refrigeração", "Segurança Física", "Hypervisors", "Containers vs VMs", "Infraestrutura como Serviço", "SLA", "Capacity Planning", "Automação", "ITIL"],
+            "analista-sistemas": ["Arquitetura de Software", "Java/Spring", "Front-end (React, Angular)", "Testes (unitários, integração)", "DevOps", "Containers (Docker)", "Microsserviços", "APIs REST", "GraphQL", "Bancos de Dados Relacionais", "ORM", "Design Patterns", "SOLID", "Clean Code", "Versionamento (Git)", "CI/CD (Jenkins, GitLab CI)", "Cloud Native", "Mensageria (RabbitMQ, Kafka)", "Segurança em Aplicações", "OAuth2", "JWT", "Metodologias Ágeis (Scrum, Kanban)", "Documentação", "Arquitetura Hexagonal", "DDD", "TDD", "BDD", "Observabilidade", "Performance", "Monitoramento"],
+            "analista-ux": ["Design Centrado no Usuário", "Heurísticas de Nielsen", "Prototipação (Figma, Sketch)", "Pesquisa com Usuários", "Acessibilidade (WCAG)", "UX Writing", "Arquitetura da Informação", "Testes de Usabilidade", "Card Sorting", "Personas", "Jornada do Usuário", "Wireframes", "Design System", "UI Design", "Cores e Tipografia", "Design Responsivo", "Microinterações", "Mobile First", "Design Thinking", "Entrevistas", "Questionários", "Análise de Concorrência", "Métrica de UX (SUS, NPS)", "Emoção do Usuário", "Neuro UX", "Inclusão Digital", "Design Ético", "Governança de UX", "Design Ops", "Portfólio de UX"]
+        };
+        const questoes = [];
+        const temas = topicosPorArea[areaId];
+        if (!temas) return [];
+        for (let i = 0; i < 30; i++) {
+            const tema = temas[i % temas.length];
+            let pergunta = `Sobre ${tema}, assinale a alternativa correta:`;
+            let opcoes = [
+                `Conceito incorreto sobre ${tema}`,
+                `Definição precisa de ${tema}`,
+                `Afirmação parcialmente verdadeira`,
+                `Exemplo prático que não se aplica`,
+                `Detalhe irrelevante`
+            ];
+            let correta = 1;
+            // Personaliza algumas perguntas
+            if (tema === "Regressão Linear") {
+                pergunta = "Em regressão linear simples, a soma dos resíduos é sempre igual a:";
+                opcoes = ["Zero", "Um", "Variância dos erros", "Média dos valores previstos", "Coeficiente angular"];
+                correta = 0;
+            }
+            if (tema === "Overfitting") {
+                pergunta = "O que é overfitting?";
+                opcoes = ["Modelo muito simples", "Modelo que se ajusta excessivamente aos dados de treino, perdendo generalização", "Modelo com baixa variância", "Modelo que não aprende", "Regularização L2"];
+                correta = 1;
+            }
+            if (tema === "SQL Avançado") {
+                pergunta = "Qual comando SQL é usado para remover uma tabela?";
+                opcoes = ["DELETE", "DROP", "TRUNCATE", "REMOVE", "ERASE"];
+                correta = 1;
+            }
+            if (tema === "LGPD") {
+                pergunta = "A Lei Geral de Proteção de Dados (LGPD) é baseada em qual regulamento europeu?";
+                opcoes = ["GDPR", "CCPA", "HIPAA", "PCI DSS", "SOX"];
+                correta = 0;
+            }
+            if (tema === "Kubernetes") {
+                pergunta = "No Kubernetes, qual recurso gerencia a réplica de Pods?";
+                opcoes = ["Service", "Deployment", "ConfigMap", "Ingress", "PersistentVolume"];
+                correta = 1;
+            }
+            if (tema === "UX Writing") {
+                pergunta = "O que é UX Writing?";
+                opcoes = ["Escrever código de interface", "Criar textos para melhorar a experiência do usuário", "Desenhar wireframes", "Testar usabilidade", "Fazer pesquisas com usuários"];
+                correta = 1;
+            }
+            questoes.push({ text: pergunta, options: opcoes, correct: correta });
+        }
+        return questoes;
+    }
+
+    function shuffleOptions(question) {
+        let items = question.options.map((opt, idx) => ({ text: opt, isCorrect: idx === question.correct }));
         for (let i = items.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [items[i], items[j]] = [items[j], items[i]];
         }
-        const novasOpcoes = items.map(item => item.texto);
-        const novoIndiceCorreto = items.findIndex(item => item.isCorrect);
-        return { options: novasOpcoes, correct: novoIndiceCorreto };
-    }
-
-    function gerarQuestoes(areaId) {
-        const base = [
-            { text: "Em regressão linear simples, a soma dos resíduos é sempre igual a:", options: ["Zero", "Um", "Variância dos erros", "Média dos valores previstos", "Coeficiente angular"], correct: 0 },
-            { text: "Sobre overfitting, assinale a alternativa correta:", options: ["Ocorre quando o modelo é muito simples", "Acontece quando o modelo tem alta variância e baixo viés", "É mitigado aumentando a complexidade", "Não afeta generalização", "Reduz acurácia no treino"], correct: 1 },
-            { text: "Qual métrica NÃO é indicada para problemas de classificação desbalanceada?", options: ["Acurácia", "Precisão", "Recall", "F1-Score", "AUC-ROC"], correct: 0 },
-            { text: "Na validação cruzada k-fold, o que significa k=5?", options: ["5 partições, treina em 4 e valida em 1", "80% treino e 20% teste", "5 épocas de treinamento", "Amostragem estratificada", "5 árvores na Random Forest"], correct: 0 },
-            { text: "Random Forest é um ensemble do tipo:", options: ["Boosting", "Bagging", "Stacking", "Voting ponderado", "AdaBoost"], correct: 1 },
-            { text: "O PCA é usado principalmente para:", options: ["Classificação supervisionada", "Redução de dimensionalidade", "Clusterização hierárquica", "Regras de associação", "Detecção de outliers"], correct: 1 },
-            { text: "Dropout é uma técnica de regularização que:", options: ["Adiciona ruído gaussiano", "Desativa neurônios aleatoriamente", "Reduz taxa de aprendizado", "Normaliza batches", "Aplica weight decay"], correct: 1 },
-            { text: "O p-valor em um teste de hipótese representa:", options: ["Probabilidade de H0 ser verdadeira", "Probabilidade dos dados (ou mais extremos) se H0 for verdadeira", "Poder do teste", "Tamanho do efeito", "Erro tipo II"], correct: 1 },
-            { text: "A Lei nº 14.133/2021 trata de:", options: ["Proteção de dados", "Licitações e contratos administrativos", "Direitos autorais", "Marco Civil da Internet", "LGPD"], correct: 1 },
-            { text: "No Kubernetes, um Deployment gerencia:", options: ["Configurações de rede", "Replicação e rollout de Pods", "Volumes persistentes", "Ingress", "Service Mesh"], correct: 1 }
-        ];
-        let questoes = [];
-        for (let q of base) {
-            const shuffled = embaralharOpcoes(q.options, q.correct);
-            questoes.push({
-                text: q.text,
-                options: shuffled.options.map((opt, idx) => `${String.fromCharCode(65+idx)}) ${opt}`),
-                correct: shuffled.correct
-            });
-        }
-        const topics = ["Regressão Logística","Árvores","SVM","Naive Bayes","K-NN","Ensembles","Validação Cruzada","Otimização","Métricas","K-means","Redes Neurais","SQL","Data Warehouse","Data Lake","Spark","Docker","Kubernetes","LGPD","DevOps","UX"];
-        for (let i = questoes.length; i < 30; i++) {
-            let tema = topics[i % topics.length];
-            let texto = `Sobre ${tema}, assinale a alternativa correta:`;
-            let opcoesBase = [`Conceito incorreto sobre ${tema}`, `Definição precisa de ${tema}`, `Afirmação parcial`, `Exemplo prático`, `Detalhe avançado`];
-            let corretaOriginal = 1;
-            if (tema === "SQL") { texto = "Qual comando remove uma tabela?"; opcoesBase = ["DELETE TABLE", "DROP TABLE", "TRUNCATE", "REMOVE", "ERASE"]; corretaOriginal = 1; }
-            if (tema === "Data Lake") { texto = "O que é um Data Lake?"; opcoesBase = ["Dados brutos sem esquema rígido", "Banco relacional", "Ferramenta ETL", "Data Warehouse", "Sistema de arquivos"]; corretaOriginal = 0; }
-            const shuffled = embaralharOpcoes(opcoesBase, corretaOriginal);
-            questoes.push({
-                text: texto,
-                options: shuffled.options.map((opt, idx) => `${String.fromCharCode(65+idx)}) ${opt}`),
-                correct: shuffled.correct
-            });
-        }
-        return questoes;
+        const newOptions = items.map(item => item.text);
+        const newCorrect = items.findIndex(item => item.isCorrect);
+        return { text: question.text, options: newOptions, correct: newCorrect };
     }
 
     // ==================== RANKING ====================
@@ -435,9 +423,8 @@
                     <p>30 questões estilo FGV (cada acerto vale 5 pontos)</p>
                     <div class="btn-group">
                         <button class="btn start-simulado" data-area='${JSON.stringify(area)}'><i class="fas fa-play"></i> Simulado</button>
-                        <button class="btn btn-secondary download-ebook" data-pdf="${area.pdf}"><i class="fas fa-book"></i> E-book</button>
                     </div>
-                    <div class="pdf-destaque"><i class="fas fa-gift"></i> Acertando 70% você ganha este PDF grátis!</div>
+                    <div class="pdf-destaque"><i class="fas fa-gift"></i> 📘 Acertando 70% você ganha o PDF com 100 questões comentadas da área!</div>
                 </div>
             `;
             container.appendChild(card);
@@ -448,16 +435,10 @@
                 iniciarSimulado(area);
             });
         });
-        document.querySelectorAll('.download-ebook').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const pdf = btn.getAttribute('data-pdf');
-                window.open(pdf, '_blank');
-            });
-        });
         atualizarRanking();
     }
 
-    // ==================== ADMIN CRUD COM EDIÇÃO DE DATA E PONTUAÇÃO ====================
+    // ==================== ADMIN CRUD ====================
     function renderAdminPanel() {
         const usuarios = getUsuarios();
         const tbody = document.getElementById('userTableBody');
@@ -465,23 +446,16 @@
         usuarios.forEach(u => {
             const row = tbody.insertRow();
             row.insertCell(0).innerText = u.id;
-            row.insertCell(1).innerHTML = `<input type="text" value="${u.nome}" class="edit-nome" data-id="${u.id}" style="width:100%;">`;
-            row.insertCell(2).innerHTML = `<input type="email" value="${u.email}" class="edit-email" data-id="${u.id}" style="width:100%;">`;
-            row.insertCell(3).innerHTML = `<input type="number" value="${u.pontos || 0}" class="edit-pontos" data-id="${u.id}" style="width:80px;">`;
-            row.insertCell(4).innerHTML = `<input type="number" value="${u.downloadsRestantes}" class="edit-downloads" data-id="${u.id}" style="width:80px;">`;
-            // Data do último simulado (input date)
+            row.insertCell(1).innerHTML = `<input type="text" value="${u.nome}" class="edit-nome" data-id="${u.id}">`;
+            row.insertCell(2).innerHTML = `<input type="email" value="${u.email}" class="edit-email" data-id="${u.id}">`;
+            row.insertCell(3).innerHTML = `<input type="number" value="${u.pontos||0}" class="edit-pontos" data-id="${u.id}">`;
+            row.insertCell(4).innerHTML = `<input type="number" value="${u.downloadsRestantes}" class="edit-downloads" data-id="${u.id}">`;
             const dataValue = u.ultimoSimulado ? new Date(u.ultimoSimulado).toISOString().split('T')[0] : '';
-            row.insertCell(5).innerHTML = `<input type="date" value="${dataValue}" class="edit-data" data-id="${u.id}" style="width:130px;">`;
-            // Última pontuação (%)
-            row.insertCell(6).innerHTML = `<input type="number" step="1" min="0" max="100" value="${u.ultimaPontuacao || 0}" class="edit-pontuacao" data-id="${u.id}" style="width:80px;">`;
+            row.insertCell(5).innerHTML = `<input type="date" value="${dataValue}" class="edit-data" data-id="${u.id}">`;
+            row.insertCell(6).innerHTML = `<input type="number" step="1" min="0" max="100" value="${u.ultimaPontuacao||0}" class="edit-pontuacao" data-id="${u.id}">`;
             const actions = row.insertCell(7);
-            actions.innerHTML = `
-                <button class="save-user" data-id="${u.id}">Salvar</button>
-                <button class="reset-pwd" data-id="${u.id}">Reset Senha</button>
-                <button class="delete-user" data-id="${u.id}">Excluir</button>
-            `;
+            actions.innerHTML = `<button class="save-user" data-id="${u.id}">Salvar</button> <button class="reset-pwd" data-id="${u.id}">Reset Senha</button> <button class="delete-user" data-id="${u.id}">Excluir</button>`;
         });
-        // Salvar alterações
         document.querySelectorAll('.save-user').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const id = parseInt(btn.getAttribute('data-id'));
@@ -510,198 +484,104 @@
                 }
             });
         });
-        // Reset senha
         document.querySelectorAll('.reset-pwd').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const id = parseInt(btn.getAttribute('data-id'));
                 resetarSenha(id, "123");
             });
         });
-        // Excluir
         document.querySelectorAll('.delete-user').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const id = parseInt(btn.getAttribute('data-id'));
                 if (id === currentUser.id) { alert("Não é possível excluir a si mesmo."); return; }
-                if (confirm("Excluir usuário?")) {
-                    excluirUsuario(id);
-                    renderAdminPanel();
-                    atualizarRanking();
-                }
+                if (confirm("Excluir usuário?")) { excluirUsuario(id); renderAdminPanel(); atualizarRanking(); }
             });
         });
     }
-
     document.getElementById('addUserBtn')?.addEventListener('click', () => {
-        const nome = prompt("Nome do novo usuário:");
-        const email = prompt("E-mail:");
-        const senha = prompt("Senha:");
-        if (nome && email && senha) {
-            if (adicionarUsuario(nome, email, senha)) {
-                renderAdminPanel();
-                atualizarRanking();
-            } else alert("E-mail já existe.");
-        }
+        const nome = prompt("Nome:"); const email = prompt("E-mail:"); const senha = prompt("Senha:");
+        if (nome && email && senha) { if (adicionarUsuario(nome, email, senha)) { renderAdminPanel(); atualizarRanking(); } else alert("E-mail já existe."); }
     });
     document.getElementById('exportCsvBtn')?.addEventListener('click', exportarCSV);
     document.getElementById('gerarDadosExemploBtn')?.addEventListener('click', gerarDadosExemplo);
 
-    // ==================== SIMULADO (30 questões, 10 minutos, pontuação 5 por acerto) ====================
-    let questoesAtuais = [];
-    let respostas = [];
-    let indiceAtual = 0;
-    let tempoRestante = 600;
-    let timerInterval = null;
-    let simuladoFinalizado = false;
-    let areaAtual = null;
-    let storageKey = "";
-
-    function salvarProgressoSimulado() {
-        if (!simuladoFinalizado && areaAtual) {
-            localStorage.setItem(storageKey, JSON.stringify({ respostas, tempoRestante, indiceAtual }));
-        }
-    }
+    // ==================== SIMULADO ====================
+    let questoesAtuais = [], respostas = [], indiceAtual = 0, tempoRestante = 600, timerInterval = null, simuladoFinalizado = false, areaAtual = null, storageKey = "";
+    function salvarProgressoSimulado() { if (!simuladoFinalizado && areaAtual) localStorage.setItem(storageKey, JSON.stringify({ respostas, tempoRestante, indiceAtual })); }
     function carregarProgressoSimulado() {
         const saved = localStorage.getItem(storageKey);
-        if (saved) {
-            const data = JSON.parse(saved);
-            respostas = data.respostas || new Array(questoesAtuais.length).fill(null);
-            tempoRestante = data.tempoRestante ?? 600;
-            indiceAtual = data.indiceAtual ?? 0;
-        } else {
-            respostas = new Array(questoesAtuais.length).fill(null);
-        }
+        if (saved) { const data = JSON.parse(saved); respostas = data.respostas || new Array(questoesAtuais.length).fill(null); tempoRestante = data.tempoRestante ?? 600; indiceAtual = data.indiceAtual ?? 0; }
+        else { respostas = new Array(questoesAtuais.length).fill(null); }
     }
-    function formatarTempo(s) {
-        let m = Math.floor(s / 60);
-        let seg = s % 60;
-        return `${m.toString().padStart(2,'0')}:${seg.toString().padStart(2,'0')}`;
-    }
+    function formatarTempo(s) { let m = Math.floor(s/60), seg = s%60; return `${m.toString().padStart(2,'0')}:${seg.toString().padStart(2,'0')}`; }
     function atualizarTimerUI() { document.getElementById('timerDisplay').innerText = formatarTempo(tempoRestante); }
     function iniciarTimer() {
         if (timerInterval) clearInterval(timerInterval);
         timerInterval = setInterval(() => {
             if (simuladoFinalizado) return;
-            if (tempoRestante <= 0) {
-                clearInterval(timerInterval);
-                alert("Tempo esgotado! Finalizando simulado.");
-                finalizarSimulado();
-            } else {
-                tempoRestante--;
-                atualizarTimerUI();
-                salvarProgressoSimulado();
-            }
+            if (tempoRestante <= 0) { clearInterval(timerInterval); alert("Tempo esgotado!"); finalizarSimulado(); }
+            else { tempoRestante--; atualizarTimerUI(); salvarProgressoSimulado(); }
         }, 1000);
     }
     function renderizarQuestao() {
         const q = questoesAtuais[indiceAtual];
         const resp = respostas[indiceAtual];
         let html = `<div class="question-card"><div class="question-text">${indiceAtual+1}. ${q.text}</div><ul class="options">`;
-        q.options.forEach((opt, idx) => {
-            html += `<li><input type="radio" name="questao" value="${idx}" id="alt${idx}" ${resp === idx ? 'checked' : ''}><label for="alt${idx}">${opt}</label></li>`;
-        });
+        q.options.forEach((opt, idx) => { html += `<li><input type="radio" name="questao" value="${idx}" id="alt${idx}" ${resp === idx ? 'checked' : ''}><label for="alt${idx}">${opt}</label></li>`; });
         html += `</ul></div>`;
         document.getElementById('questionsPanel').innerHTML = html;
         document.querySelectorAll('input[name="questao"]').forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                respostas[indiceAtual] = parseInt(e.target.value);
-                atualizarNavegacaoUI();
-                atualizarBarraProgresso();
-                salvarProgressoSimulado();
-            });
+            radio.addEventListener('change', (e) => { respostas[indiceAtual] = parseInt(e.target.value); atualizarNavegacaoUI(); atualizarBarraProgresso(); salvarProgressoSimulado(); });
         });
     }
     function renderizarNavegacao() {
         let html = '';
-        for (let i=0; i<questoesAtuais.length; i++) {
-            html += `<button class="nav-btn ${respostas[i] !== null ? 'answered' : ''} ${i===indiceAtual ? 'current' : ''}" data-idx="${i}">${i+1}</button>`;
-        }
+        for (let i=0; i<questoesAtuais.length; i++) html += `<button class="nav-btn ${respostas[i] !== null ? 'answered' : ''} ${i===indiceAtual ? 'current' : ''}" data-idx="${i}">${i+1}</button>`;
         document.getElementById('navGrid').innerHTML = html;
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                indiceAtual = parseInt(btn.getAttribute('data-idx'));
-                renderizarQuestao();
-                atualizarNavegacaoUI();
-                salvarProgressoSimulado();
-            });
-        });
+        document.querySelectorAll('.nav-btn').forEach(btn => { btn.addEventListener('click', (e) => { indiceAtual = parseInt(btn.getAttribute('data-idx')); renderizarQuestao(); atualizarNavegacaoUI(); salvarProgressoSimulado(); }); });
     }
     function atualizarNavegacaoUI() {
         const botoes = document.querySelectorAll('.nav-btn');
-        botoes.forEach((btn,i) => {
-            if (respostas[i] !== null) btn.classList.add('answered'); else btn.classList.remove('answered');
-            if (i===indiceAtual) btn.classList.add('current'); else btn.classList.remove('current');
-        });
+        botoes.forEach((btn,i) => { if (respostas[i] !== null) btn.classList.add('answered'); else btn.classList.remove('answered'); if (i===indiceAtual) btn.classList.add('current'); else btn.classList.remove('current'); });
     }
     function atualizarBarraProgresso() {
         const respondidas = respostas.filter(r => r !== null).length;
-        const percent = (respondidas / questoesAtuais.length) * 100;
-        document.getElementById('progressFill').style.width = `${percent}%`;
+        document.getElementById('progressFill').style.width = `${(respondidas/questoesAtuais.length)*100}%`;
     }
     function finalizarSimulado() {
         if (simuladoFinalizado) return;
-        clearInterval(timerInterval);
-        simuladoFinalizado = true;
+        clearInterval(timerInterval); simuladoFinalizado = true;
         let acertos = 0;
-        for (let i=0; i<questoesAtuais.length; i++) {
-            if (respostas[i] !== null && respostas[i] === questoesAtuais[i].correct) acertos++;
-        }
+        for (let i=0; i<questoesAtuais.length; i++) if (respostas[i] !== null && respostas[i] === questoesAtuais[i].correct) acertos++;
         const percentual = (acertos / questoesAtuais.length) * 100;
-        const pontosGanhos = acertos * 5;  // 5 pontos por questão acertada
-        if (pontosGanhos > 0) {
-            currentUser.pontos += pontosGanhos;
-            currentUser.ultimoSimulado = new Date().toISOString();
-            currentUser.ultimaPontuacao = percentual.toFixed(1);
-            atualizarUsuario(currentUser);
-        }
+        const pontosGanhos = acertos * 5;
+        if (pontosGanhos > 0) { currentUser.pontos += pontosGanhos; currentUser.ultimoSimulado = new Date().toISOString(); currentUser.ultimaPontuacao = percentual.toFixed(1); atualizarUsuario(currentUser); }
         const resultsDiv = document.getElementById('resultsPanel');
         resultsDiv.style.display = 'block';
         let botoes = '';
         if (percentual >= 70) {
-            if (currentUser.downloadsRestantes > 0) {
-                botoes = `<button id="downloadPdfBtn" class="btn btn-download" style="margin-top:1rem;"><i class="fas fa-download"></i> 📥 Baixar E-book (restam ${currentUser.downloadsRestantes})</button>`;
-            } else {
-                botoes = `<p style="color:#c0392b;">⚠️ Você atingiu 70%, mas não tem mais downloads disponíveis.</p>`;
-            }
+            if (currentUser.downloadsRestantes > 0) botoes = `<button id="downloadPdfBtn" class="btn btn-download" style="margin-top:1rem;"><i class="fas fa-download"></i> 📥 Baixar E-book (restam ${currentUser.downloadsRestantes})</button>`;
+            else botoes = `<p style="color:#c0392b;">⚠️ Você atingiu 70%, mas não tem mais downloads disponíveis.</p>`;
         } else {
-            botoes = `<p style="color:#c0392b;">🔒 Atingiu ${percentual.toFixed(1)}% – mínimo 70% para baixar o PDF.</p>
-                       <p><i class="fab fa-youtube"></i> <a href="https://www.youtube.com/@EstudandoTI_Brasil" target="_blank" style="color:#0b5e7c;">Assista as aulas no Youtube</a> para melhorar seu desempenho!</p>`;
+            botoes = `<p style="color:#c0392b;">🔒 Atingiu ${percentual.toFixed(1)}% – mínimo 70% para baixar o PDF.</p><p><i class="fab fa-youtube"></i> <a href="https://www.youtube.com/@EstudandoTI_Brasil" target="_blank" style="color:#0b5e7c;">Assista as aulas no Youtube</a> para melhorar seu desempenho!</p>`;
         }
-        resultsDiv.innerHTML = `
-            <h3>Resultado Final</h3>
-            <div class="score">${acertos}/${questoesAtuais.length} (${percentual.toFixed(1)}%)</div>
-            <p>+${pontosGanhos} pontos (${acertos} acertos × 5)</p>
-            ${botoes}
-            <button id="restartBtn" class="btn" style="margin-top:1rem;"><i class="fas fa-sync-alt"></i> Refazer Simulado</button>
-        `;
-        document.getElementById('restartBtn')?.addEventListener('click', () => {
-            localStorage.removeItem(storageKey);
-            iniciarSimulado(areaAtual);
-        });
+        resultsDiv.innerHTML = `<h3>Resultado Final</h3><div class="score">${acertos}/${questoesAtuais.length} (${percentual.toFixed(1)}%)</div><p>+${pontosGanhos} pontos (${acertos} acertos × 5)</p>${botoes}<button id="restartBtn" class="btn" style="margin-top:1rem;"><i class="fas fa-sync-alt"></i> Refazer Simulado</button>`;
+        document.getElementById('restartBtn')?.addEventListener('click', () => { localStorage.removeItem(storageKey); iniciarSimulado(areaAtual); });
         if (percentual >= 70 && currentUser.downloadsRestantes > 0) {
             const downloadBtn = document.getElementById('downloadPdfBtn');
-            if (downloadBtn) {
-                downloadBtn.addEventListener('click', () => {
-                    if (currentUser.downloadsRestantes > 0) {
-                        currentUser.downloadsRestantes--;
-                        atualizarUsuario(currentUser);
-                        alert(`Download liberado! Restam ${currentUser.downloadsRestantes} downloads.`);
-                        try {
-                            window.open(areaAtual.pdf, '_blank');
-                        } catch(e) {
-                            alert("Erro ao abrir o PDF. Verifique se o arquivo existe na pasta correta.");
-                        }
-                    } else alert("Sem downloads disponíveis.");
-                });
-            }
+            if (downloadBtn) downloadBtn.addEventListener('click', () => {
+                if (currentUser.downloadsRestantes > 0) { currentUser.downloadsRestantes--; atualizarUsuario(currentUser); alert(`Download liberado! Restam ${currentUser.downloadsRestantes} downloads.`); window.open(areaAtual.pdf, '_blank'); downloadBtn.disabled = true; downloadBtn.style.opacity = '0.5'; }
+                else alert("Sem downloads disponíveis.");
+            });
         }
-        document.getElementById('submitBtn').disabled = true;
-        document.getElementById('submitBtn').style.opacity = '0.6';
+        document.getElementById('submitBtn').disabled = true; document.getElementById('submitBtn').style.opacity = '0.6';
         localStorage.removeItem(storageKey);
         atualizarRanking();
     }
     function iniciarSimulado(area) {
         areaAtual = area;
-        questoesAtuais = gerarQuestoes(area.id);
+        const questoesBase = obterQuestoesDaArea(area.id);
+        questoesAtuais = questoesBase.map(q => shuffleOptions(q));
         storageKey = `simulado_${area.id}_${currentUser.id}`;
         carregarProgressoSimulado();
         simuladoFinalizado = false;
@@ -713,10 +593,8 @@
         renderizarNavegacao();
         renderizarQuestao();
         atualizarBarraProgresso();
-        document.getElementById('submitBtn').disabled = false;
-        document.getElementById('submitBtn').style.opacity = '1';
-        document.getElementById('resultsPanel').style.display = 'none';
-        document.getElementById('resultsPanel').innerHTML = '';
+        document.getElementById('submitBtn').disabled = false; document.getElementById('submitBtn').style.opacity = '1';
+        document.getElementById('resultsPanel').style.display = 'none'; document.getElementById('resultsPanel').innerHTML = '';
         document.getElementById('prevBtn').onclick = () => { if (indiceAtual > 0 && !simuladoFinalizado) { indiceAtual--; renderizarQuestao(); atualizarNavegacaoUI(); salvarProgressoSimulado(); } };
         document.getElementById('nextBtn').onclick = () => { if (indiceAtual < questoesAtuais.length-1 && !simuladoFinalizado) { indiceAtual++; renderizarQuestao(); atualizarNavegacaoUI(); salvarProgressoSimulado(); } };
         document.getElementById('submitBtn').onclick = () => { if (confirm("Finalizar simulado?")) finalizarSimulado(); };
@@ -724,111 +602,52 @@
     }
 
     // ==================== CONTROLE DE TELAS ====================
-    function showScreen(screenId) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(screenId).classList.add('active');
-    }
+    function showScreen(screenId) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(screenId).classList.add('active'); }
 
-    // ==================== LOGIN ====================
+    // ==================== LOGIN E CADASTRO ====================
     function fazerLogin() {
         const email = document.getElementById('loginEmail').value.trim();
         const senha = document.getElementById('loginSenha').value;
         const user = autenticar(email, senha);
-        if (user) {
-            currentUser = user;
-            localStorage.setItem('usuarioLogado', JSON.stringify({ id: user.id, nome: user.nome, email: user.email, pontos: user.pontos, downloadsRestantes: user.downloadsRestantes }));
-            renderDashboard();
-            showScreen('dashboardScreen');
-        } else {
-            document.getElementById('authMsg').innerText = 'E-mail ou senha inválidos.';
-        }
+        if (user) { currentUser = user; localStorage.setItem('usuarioLogado', JSON.stringify({ id: user.id, nome: user.nome, email: user.email, pontos: user.pontos, downloadsRestantes: user.downloadsRestantes })); renderDashboard(); showScreen('dashboardScreen'); }
+        else { document.getElementById('authMsg').innerText = 'E-mail ou senha inválidos.'; }
     }
     function fazerCadastro() {
         const nome = document.getElementById('regNome').value.trim();
         const email = document.getElementById('regEmail').value.trim();
         const senha = document.getElementById('regSenha').value;
-        if (!nome || !email || !senha) {
-            document.getElementById('regMsg').innerText = 'Preencha todos os campos.';
-            return;
-        }
-        if (adicionarUsuario(nome, email, senha)) {
-            document.getElementById('regMsg').innerText = 'Cadastro realizado! Faça login.';
-            setTimeout(() => {
-                document.getElementById('loginSection').style.display = 'block';
-                document.getElementById('registerSection').style.display = 'none';
-            }, 1500);
-        } else {
-            document.getElementById('regMsg').innerText = 'E-mail já existe.';
-        }
+        if (!nome || !email || !senha) { document.getElementById('regMsg').innerText = 'Preencha todos os campos.'; return; }
+        if (adicionarUsuario(nome, email, senha)) { document.getElementById('regMsg').innerText = 'Cadastro realizado! Faça login.'; setTimeout(() => { document.getElementById('loginSection').style.display = 'block'; document.getElementById('registerSection').style.display = 'none'; }, 1500); }
+        else { document.getElementById('regMsg').innerText = 'E-mail já existe.'; }
     }
-    function logout() {
-        localStorage.removeItem('usuarioLogado');
-        location.reload();
-    }
+    function logout() { localStorage.removeItem('usuarioLogado'); location.reload(); }
 
     // ==================== MODAL ALTERAR SENHA ====================
     const modal = document.getElementById('changePwdModal');
-    document.getElementById('changePwdBtn').addEventListener('click', () => {
-        modal.style.display = 'flex';
-    });
-    document.getElementById('closeModal').addEventListener('click', () => {
-        modal.style.display = 'none';
-    });
+    document.getElementById('changePwdBtn').addEventListener('click', () => { modal.style.display = 'flex'; });
+    document.getElementById('closeModal').addEventListener('click', () => { modal.style.display = 'none'; });
     document.getElementById('confirmChangePwd').addEventListener('click', () => {
         const oldPwd = document.getElementById('oldPassword').value;
         const newPwd = document.getElementById('newPassword').value;
         const confirmPwd = document.getElementById('confirmPassword').value;
-        if (newPwd !== confirmPwd) {
-            alert("Nova senha e confirmação não conferem.");
-            return;
-        }
-        if (alterarMinhaSenha(oldPwd, newPwd)) {
-            modal.style.display = 'none';
-            document.getElementById('oldPassword').value = '';
-            document.getElementById('newPassword').value = '';
-            document.getElementById('confirmPassword').value = '';
-        }
+        if (newPwd !== confirmPwd) { alert("Nova senha e confirmação não conferem."); return; }
+        if (alterarMinhaSenha(oldPwd, newPwd)) { modal.style.display = 'none'; document.getElementById('oldPassword').value = ''; document.getElementById('newPassword').value = ''; document.getElementById('confirmPassword').value = ''; }
     });
 
     // ==================== INICIALIZAÇÃO ====================
     inicializarUsuarios();
     const savedUser = localStorage.getItem('usuarioLogado');
-    if (savedUser) {
-        const data = JSON.parse(savedUser);
-        const user = getUsuarios().find(u => u.id === data.id && u.ativo);
-        if (user) {
-            currentUser = user;
-            renderDashboard();
-            showScreen('dashboardScreen');
-        } else {
-            showScreen('loginScreen');
-        }
-    } else {
-        showScreen('loginScreen');
-    }
+    if (savedUser) { const data = JSON.parse(savedUser); const user = getUsuarios().find(u => u.id === data.id && u.ativo); if (user) { currentUser = user; renderDashboard(); showScreen('dashboardScreen'); } else { showScreen('loginScreen'); } }
+    else { showScreen('loginScreen'); }
 
-    // Eventos UI
     document.getElementById('loginBtn').addEventListener('click', fazerLogin);
     document.getElementById('registerBtn').addEventListener('click', fazerCadastro);
-    document.getElementById('showRegister').addEventListener('click', () => {
-        document.getElementById('loginSection').style.display = 'none';
-        document.getElementById('registerSection').style.display = 'block';
-    });
-    document.getElementById('showLogin').addEventListener('click', () => {
-        document.getElementById('loginSection').style.display = 'block';
-        document.getElementById('registerSection').style.display = 'none';
-    });
+    document.getElementById('showRegister').addEventListener('click', () => { document.getElementById('loginSection').style.display = 'none'; document.getElementById('registerSection').style.display = 'block'; });
+    document.getElementById('showLogin').addEventListener('click', () => { document.getElementById('loginSection').style.display = 'block'; document.getElementById('registerSection').style.display = 'none'; });
     document.getElementById('logoutBtn').addEventListener('click', logout);
-    document.getElementById('adminPanelBtn').addEventListener('click', () => {
-        renderAdminPanel();
-        showScreen('adminScreen');
-    });
+    document.getElementById('adminPanelBtn').addEventListener('click', () => { renderAdminPanel(); showScreen('adminScreen'); });
     document.getElementById('backFromAdmin').addEventListener('click', () => showScreen('dashboardScreen'));
-    document.getElementById('backToDashboard').addEventListener('click', () => {
-        if (timerInterval) clearInterval(timerInterval);
-        showScreen('dashboardScreen');
-        atualizarRanking();
-    });
+    document.getElementById('backToDashboard').addEventListener('click', () => { if (timerInterval) clearInterval(timerInterval); showScreen('dashboardScreen'); atualizarRanking(); });
 </script>
 </body>
 </html>
