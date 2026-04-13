@@ -6,6 +6,10 @@
     <title>EstudandoTI_Brasil - Simulados FGV para TI</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0b2b44 0%, #1b5e7a 100%); min-height: 100vh; padding: 1rem; }
@@ -224,101 +228,37 @@
 </div>
 
 <script>
-    // ==================== GERENCIAMENTO DE USUÁRIOS ====================
+    // ==================== CONFIGURAÇÃO DO FIREBASE ====================
+    const firebaseConfig = {
+        apiKey: "AIzaSyBfTHfkDvVhfCcxtYPlGeBwk3xijSEJ6Ks",
+        authDomain: "cadastro---fgv-simulados.firebaseapp.com",
+        projectId: "cadastro---fgv-simulados",
+        storageBucket: "cadastro---fgv-simulados.firebasestorage.app",
+        messagingSenderId: "692271311021",
+        appId: "1:692271311021:web:3abdfbe598a685fae7be24",
+        measurementId: "G-X50QZRPH8Q"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // ==================== VARIÁVEIS GLOBAIS ====================
     let currentUser = null;
-    function getUsuarios() { return JSON.parse(localStorage.getItem('usuarios_sistema') || '[]'); }
-    function saveUsuarios(usuarios) { localStorage.setItem('usuarios_sistema', JSON.stringify(usuarios)); }
-    function inicializarUsuarios() {
-        let usuarios = getUsuarios();
-        if (usuarios.length === 0) {
-            usuarios = [
-                { id: 1, nome: "Ana Carolina", email: "ana@teste.com", senha: "123", pontos: 98, ativo: true, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null },
-                { id: 2, nome: "Bruno Lima", email: "bruno@teste.com", senha: "123", pontos: 95, ativo: true, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null },
-                { id: 3, nome: "Admin", email: "admin@admin.com", senha: "admin123", pontos: 0, ativo: true, isAdmin: true, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null }
-            ];
-            saveUsuarios(usuarios);
-        }
-    }
-    function autenticar(email, senha) { return getUsuarios().find(u => u.email === email && u.senha === senha && u.ativo); }
-    function adicionarUsuario(nome, email, senha) {
-        const usuarios = getUsuarios();
-        if (usuarios.find(u => u.email === email)) return false;
-        const novoId = usuarios.length ? Math.max(...usuarios.map(u => u.id)) + 1 : 1;
-        usuarios.push({ id: novoId, nome, email, senha, pontos: 0, ativo: true, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null });
-        saveUsuarios(usuarios);
-        return true;
-    }
-    function atualizarUsuario(usuarioAtualizado) {
-        let usuarios = getUsuarios();
-        const index = usuarios.findIndex(u => u.id === usuarioAtualizado.id);
-        if (index !== -1) usuarios[index] = usuarioAtualizado;
-        saveUsuarios(usuarios);
-        if (currentUser && currentUser.id === usuarioAtualizado.id) {
-            currentUser = usuarioAtualizado;
-            localStorage.setItem('usuarioLogado', JSON.stringify({ id: currentUser.id, nome: currentUser.nome, email: currentUser.email, pontos: currentUser.pontos, downloadsRestantes: currentUser.downloadsRestantes }));
-        }
-    }
-    function excluirUsuario(id) {
-        let usuarios = getUsuarios();
-        usuarios = usuarios.filter(u => u.id !== id);
-        saveUsuarios(usuarios);
-    }
-    function resetarSenha(id, novaSenha = "123") {
-        let usuarios = getUsuarios();
-        const user = usuarios.find(u => u.id === id);
-        if (user) { user.senha = novaSenha; saveUsuarios(usuarios); alert(`Senha do usuário ${user.nome} redefinida para ${novaSenha}`); }
-    }
-    function alterarMinhaSenha(senhaAtual, novaSenha) {
-        if (currentUser.senha !== senhaAtual) { alert("Senha atual incorreta."); return false; }
-        if (novaSenha.length < 3) { alert("A nova senha deve ter pelo menos 3 caracteres."); return false; }
-        currentUser.senha = novaSenha;
-        atualizarUsuario(currentUser);
-        alert("Senha alterada com sucesso!");
-        return true;
-    }
-    function exportarCSV() {
-        const usuarios = getUsuarios().filter(u => u.ativo);
-        const cabecalho = ["Nome", "Email", "Pontos", "Downloads Restantes", "Ultimo Simulado", "Ultima Pontuacao (%)"];
-        const linhas = usuarios.map(u => [u.nome, u.email, u.pontos||0, u.downloadsRestantes, u.ultimoSimulado ? new Date(u.ultimoSimulado).toLocaleDateString() : "", u.ultimaPontuacao||""]);
-        const conteudoCSV = [cabecalho, ...linhas].map(row => row.map(cell => `"${cell}"`).join(",")).join("\n");
-        const blob = new Blob(["\uFEFF" + conteudoCSV], { type: "text/csv;charset=utf-8;" });
-        const link = document.createElement("a");
-        const url = URL.createObjectURL(blob);
-        link.href = url;
-        link.setAttribute("download", "usuarios_export.csv");
-        document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url);
-    }
-    function gerarDadosExemplo() {
-        let usuarios = getUsuarios();
-        const hoje = new Date();
-        usuarios = usuarios.map(u => {
-            if (u.isAdmin) return u;
-            const diasAtras = Math.floor(Math.random() * 30);
-            const dataSimulado = new Date(hoje); dataSimulado.setDate(hoje.getDate() - diasAtras);
-            const pontuacaoPercentual = Math.floor(Math.random() * 101);
-            const novosPontos = Math.floor(pontuacaoPercentual * 1.5);
-            u.ultimoSimulado = dataSimulado.toISOString();
-            u.ultimaPontuacao = pontuacaoPercentual;
-            u.pontos = novosPontos;
-            return u;
-        });
-        saveUsuarios(usuarios);
-        renderAdminPanel();
-        atualizarRanking();
-        alert("Dados de exemplo gerados!");
+    let currentUserUid = null;
+
+    // ==================== FUNÇÕES DE USUÁRIO (FIREBASE) ====================
+    async function atualizarUsuarioNoFirestore(usuarioAtualizado) {
+        if (!currentUserUid) return;
+        await db.collection('usuarios').doc(currentUserUid).update(usuarioAtualizado);
+        currentUser = { ...currentUser, ...usuarioAtualizado };
     }
 
-    // ==================== ÁREAS E PDFs ====================
-    const areas = [
-        { id: "cientista-dados", nome: "Cientista de Dados", icone: "brain", pdf: "ebook-cientista-dados.pdf" },
-        { id: "engenheiro-dados", nome: "Engenheiro de Dados", icone: "database", pdf: "ebook-Engenheiro-Dados.pdf" },
-        { id: "analista-seguranca", nome: "Analista de Segurança", icone: "shield-alt", pdf: "ebook-Analista-Segurança.pdf" },
-        { id: "analista-infraestrutura", nome: "Analista de Infraestrutura", icone: "server", pdf: "ebook-Analista-Infraestrutura.pdf" },
-        { id: "analista-sistemas", nome: "Analista de Sistemas", icone: "code", pdf: "ebook-Analista-Sistemas.pdf" },
-        { id: "analista-ux", nome: "Analista de UX", icone: "palette", pdf: "ebook-UX.pdf" }
-    ];
+    async function resetarSenhaFirebase(email) {
+        await auth.sendPasswordResetEmail(email);
+        alert("E-mail de redefinição enviado! Verifique sua caixa de entrada.");
+    }
 
-    // ==================== GERADOR DE QUESTÕES ESPECÍFICAS POR ÁREA (SEM DICAS) ====================
+    // ==================== GERADOR DE QUESTÕES (SEM DICAS) ====================
     function obterQuestoesDaArea(areaId) {
         const topicosPorArea = {
             "cientista-dados": ["Regressão Linear", "Overfitting", "Validação Cruzada", "PCA", "Clusterização", "Redes Neurais", "Árvores de Decisão", "SVM", "Naive Bayes", "Ensemble", "Métricas de Avaliação", "SQL para Análise", "Data Warehouse", "Business Intelligence", "Estatística Descritiva", "Teste de Hipóteses", "Distribuições", "Deep Learning", "CNN", "RNN", "IA Generativa", "LLM", "Geoprocessamento", "LGPD", "Ética em IA", "Data Mining", "Visualização de Dados", "Big Data", "Spark", "ETL"],
@@ -342,7 +282,6 @@
                 `Detalhe irrelevante`
             ];
             let correta = 1;
-            // Personaliza algumas perguntas
             if (tema === "Regressão Linear") {
                 pergunta = "Em regressão linear simples, a soma dos resíduos é sempre igual a:";
                 opcoes = ["Zero", "Um", "Variância dos erros", "Média dos valores previstos", "Coeficiente angular"];
@@ -389,13 +328,23 @@
         return { text: question.text, options: newOptions, correct: newCorrect };
     }
 
-    // ==================== RANKING ====================
-    function atualizarRanking() {
-        const usuarios = getUsuarios().filter(u => u.ativo);
-        usuarios.sort((a,b) => (b.pontos || 0) - (a.pontos || 0));
+    // ==================== ÁREAS E PDFs ====================
+    const areas = [
+        { id: "cientista-dados", nome: "Cientista de Dados", icone: "brain", pdf: "ebook-cientista-dados.pdf" },
+        { id: "engenheiro-dados", nome: "Engenheiro de Dados", icone: "database", pdf: "ebook-Engenheiro-Dados.pdf" },
+        { id: "analista-seguranca", nome: "Analista de Segurança", icone: "shield-alt", pdf: "ebook-Analista-Segurança.pdf" },
+        { id: "analista-infraestrutura", nome: "Analista de Infraestrutura", icone: "server", pdf: "ebook-Analista-Infraestrutura.pdf" },
+        { id: "analista-sistemas", nome: "Analista de Sistemas", icone: "code", pdf: "ebook-Analista-Sistemas.pdf" },
+        { id: "analista-ux", nome: "Analista de UX", icone: "palette", pdf: "ebook-UX.pdf" }
+    ];
+
+    // ==================== RANKING (FIREBASE) ====================
+    async function atualizarRanking() {
+        const snapshot = await db.collection('usuarios').orderBy('pontos', 'desc').limit(10).get();
+        const usuarios = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         const rankingList = document.getElementById('rankingList');
         if (rankingList) {
-            rankingList.innerHTML = usuarios.slice(0,10).map(u => {
+            rankingList.innerHTML = usuarios.map(u => {
                 let dataInfo = '';
                 if (u.ultimoSimulado) {
                     const data = new Date(u.ultimoSimulado);
@@ -438,9 +387,10 @@
         atualizarRanking();
     }
 
-    // ==================== ADMIN CRUD ====================
-    function renderAdminPanel() {
-        const usuarios = getUsuarios();
+    // ==================== ADMIN CRUD (FIREBASE) ====================
+    async function renderAdminPanel() {
+        const snapshot = await db.collection('usuarios').get();
+        const usuarios = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         const tbody = document.getElementById('userTableBody');
         tbody.innerHTML = '';
         usuarios.forEach(u => {
@@ -457,61 +407,115 @@
             actions.innerHTML = `<button class="save-user" data-id="${u.id}">Salvar</button> <button class="reset-pwd" data-id="${u.id}">Reset Senha</button> <button class="delete-user" data-id="${u.id}">Excluir</button>`;
         });
         document.querySelectorAll('.save-user').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const id = parseInt(btn.getAttribute('data-id'));
+            btn.addEventListener('click', async (e) => {
+                const id = btn.getAttribute('data-id');
                 const nome = document.querySelector(`.edit-nome[data-id="${id}"]`).value;
                 const email = document.querySelector(`.edit-email[data-id="${id}"]`).value;
                 const pontos = parseInt(document.querySelector(`.edit-pontos[data-id="${id}"]`).value);
                 const downloads = parseInt(document.querySelector(`.edit-downloads[data-id="${id}"]`).value);
                 const dataStr = document.querySelector(`.edit-data[data-id="${id}"]`).value;
                 const pontuacao = parseInt(document.querySelector(`.edit-pontuacao[data-id="${id}"]`).value);
-                let usuarios = getUsuarios();
-                const index = usuarios.findIndex(u => u.id === id);
-                if (index !== -1) {
-                    usuarios[index].nome = nome;
-                    usuarios[index].email = email;
-                    usuarios[index].pontos = pontos;
-                    usuarios[index].downloadsRestantes = downloads;
-                    usuarios[index].ultimoSimulado = dataStr ? new Date(dataStr).toISOString() : null;
-                    usuarios[index].ultimaPontuacao = isNaN(pontuacao) ? 0 : pontuacao;
-                    saveUsuarios(usuarios);
-                    if (currentUser.id === id) {
-                        currentUser = usuarios[index];
-                        localStorage.setItem('usuarioLogado', JSON.stringify({ id: currentUser.id, nome: currentUser.nome, email: currentUser.email, pontos: currentUser.pontos, downloadsRestantes: currentUser.downloadsRestantes }));
-                    }
+                await db.collection('usuarios').doc(id).update({
+                    nome, email, pontos, downloadsRestantes: downloads,
+                    ultimoSimulado: dataStr ? new Date(dataStr).toISOString() : null,
+                    ultimaPontuacao: isNaN(pontuacao) ? 0 : pontuacao
+                });
+                if (currentUserUid === id) {
+                    currentUser = { ...currentUser, nome, email, pontos, downloadsRestantes: downloads, ultimoSimulado: dataStr ? new Date(dataStr).toISOString() : null, ultimaPontuacao: pontuacao };
+                }
+                renderAdminPanel();
+                atualizarRanking();
+            });
+        });
+        document.querySelectorAll('.reset-pwd').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const id = btn.getAttribute('data-id');
+                const userDoc = await db.collection('usuarios').doc(id).get();
+                const email = userDoc.data().email;
+                if (email) await resetarSenhaFirebase(email);
+                else alert("E-mail não encontrado.");
+            });
+        });
+        document.querySelectorAll('.delete-user').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const id = btn.getAttribute('data-id');
+                if (id === currentUserUid) { alert("Não é possível excluir a si mesmo."); return; }
+                if (confirm("Excluir usuário?")) {
+                    await db.collection('usuarios').doc(id).delete();
                     renderAdminPanel();
                     atualizarRanking();
                 }
             });
         });
-        document.querySelectorAll('.reset-pwd').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const id = parseInt(btn.getAttribute('data-id'));
-                resetarSenha(id, "123");
-            });
-        });
-        document.querySelectorAll('.delete-user').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const id = parseInt(btn.getAttribute('data-id'));
-                if (id === currentUser.id) { alert("Não é possível excluir a si mesmo."); return; }
-                if (confirm("Excluir usuário?")) { excluirUsuario(id); renderAdminPanel(); atualizarRanking(); }
-            });
-        });
     }
-    document.getElementById('addUserBtn')?.addEventListener('click', () => {
-        const nome = prompt("Nome:"); const email = prompt("E-mail:"); const senha = prompt("Senha:");
-        if (nome && email && senha) { if (adicionarUsuario(nome, email, senha)) { renderAdminPanel(); atualizarRanking(); } else alert("E-mail já existe."); }
-    });
-    document.getElementById('exportCsvBtn')?.addEventListener('click', exportarCSV);
-    document.getElementById('gerarDadosExemploBtn')?.addEventListener('click', gerarDadosExemplo);
 
-    // ==================== SIMULADO ====================
-    let questoesAtuais = [], respostas = [], indiceAtual = 0, tempoRestante = 600, timerInterval = null, simuladoFinalizado = false, areaAtual = null, storageKey = "";
-    function salvarProgressoSimulado() { if (!simuladoFinalizado && areaAtual) localStorage.setItem(storageKey, JSON.stringify({ respostas, tempoRestante, indiceAtual })); }
-    function carregarProgressoSimulado() {
-        const saved = localStorage.getItem(storageKey);
-        if (saved) { const data = JSON.parse(saved); respostas = data.respostas || new Array(questoesAtuais.length).fill(null); tempoRestante = data.tempoRestante ?? 600; indiceAtual = data.indiceAtual ?? 0; }
-        else { respostas = new Array(questoesAtuais.length).fill(null); }
+    document.getElementById('addUserBtn')?.addEventListener('click', async () => {
+        const nome = prompt("Nome:"); const email = prompt("E-mail:"); const senha = prompt("Senha:");
+        if (nome && email && senha) {
+            try {
+                const cred = await auth.createUserWithEmailAndPassword(email, senha);
+                await db.collection('usuarios').doc(cred.user.uid).set({
+                    nome, email, pontos: 0, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null, isAdmin: false
+                });
+                renderAdminPanel();
+                atualizarRanking();
+            } catch (error) { alert("Erro ao criar usuário: " + error.message); }
+        }
+    });
+    document.getElementById('exportCsvBtn')?.addEventListener('click', async () => {
+        const snapshot = await db.collection('usuarios').get();
+        const usuarios = snapshot.docs.map(doc => doc.data());
+        const cabecalho = ["Nome", "Email", "Pontos", "Downloads Restantes", "Ultimo Simulado", "Ultima Pontuacao (%)"];
+        const linhas = usuarios.map(u => [u.nome, u.email, u.pontos||0, u.downloadsRestantes, u.ultimoSimulado ? new Date(u.ultimoSimulado).toLocaleDateString() : "", u.ultimaPontuacao||""]);
+        const conteudoCSV = [cabecalho, ...linhas].map(row => row.map(cell => `"${cell}"`).join(",")).join("\n");
+        const blob = new Blob(["\uFEFF" + conteudoCSV], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.href = url; link.setAttribute("download", "usuarios_export.csv");
+        document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url);
+    });
+    document.getElementById('gerarDadosExemploBtn')?.addEventListener('click', async () => {
+        const snapshot = await db.collection('usuarios').get();
+        const hoje = new Date();
+        for (const doc of snapshot.docs) {
+            const u = doc.data();
+            if (u.isAdmin) continue;
+            const diasAtras = Math.floor(Math.random() * 30);
+            const dataSimulado = new Date(hoje); dataSimulado.setDate(hoje.getDate() - diasAtras);
+            const pontuacaoPercentual = Math.floor(Math.random() * 101);
+            const novosPontos = Math.floor(pontuacaoPercentual * 1.5);
+            await db.collection('usuarios').doc(doc.id).update({
+                ultimoSimulado: dataSimulado.toISOString(),
+                ultimaPontuacao: pontuacaoPercentual,
+                pontos: novosPontos
+            });
+        }
+        renderAdminPanel();
+        atualizarRanking();
+        alert("Dados de exemplo gerados!");
+    });
+
+    // ==================== SIMULADO (FIREBASE) ====================
+    let questoesAtuais = [], respostas = [], indiceAtual = 0, tempoRestante = 600, timerInterval = null, simuladoFinalizado = false, areaAtual = null;
+    async function salvarProgressoSimulado() {
+        if (!simuladoFinalizado && areaAtual && currentUserUid) {
+            await db.collection('progresso').doc(`${currentUserUid}_${areaAtual.id}`).set({
+                respostas: respostas,
+                tempoRestante: tempoRestante,
+                indiceAtual: indiceAtual
+            });
+        }
+    }
+    async function carregarProgressoSimulado() {
+        const docRef = await db.collection('progresso').doc(`${currentUserUid}_${areaAtual.id}`).get();
+        if (docRef.exists) {
+            const data = docRef.data();
+            respostas = data.respostas || new Array(questoesAtuais.length).fill(null);
+            tempoRestante = data.tempoRestante ?? 600;
+            indiceAtual = data.indiceAtual ?? 0;
+        } else {
+            respostas = new Array(questoesAtuais.length).fill(null);
+        }
     }
     function formatarTempo(s) { let m = Math.floor(s/60), seg = s%60; return `${m.toString().padStart(2,'0')}:${seg.toString().padStart(2,'0')}`; }
     function atualizarTimerUI() { document.getElementById('timerDisplay').innerText = formatarTempo(tempoRestante); }
@@ -548,14 +552,24 @@
         const respondidas = respostas.filter(r => r !== null).length;
         document.getElementById('progressFill').style.width = `${(respondidas/questoesAtuais.length)*100}%`;
     }
-    function finalizarSimulado() {
+    async function finalizarSimulado() {
         if (simuladoFinalizado) return;
         clearInterval(timerInterval); simuladoFinalizado = true;
         let acertos = 0;
         for (let i=0; i<questoesAtuais.length; i++) if (respostas[i] !== null && respostas[i] === questoesAtuais[i].correct) acertos++;
         const percentual = (acertos / questoesAtuais.length) * 100;
         const pontosGanhos = acertos * 5;
-        if (pontosGanhos > 0) { currentUser.pontos += pontosGanhos; currentUser.ultimoSimulado = new Date().toISOString(); currentUser.ultimaPontuacao = percentual.toFixed(1); atualizarUsuario(currentUser); }
+        if (pontosGanhos > 0) {
+            const novosPontos = (currentUser.pontos || 0) + pontosGanhos;
+            await atualizarUsuarioNoFirestore({
+                pontos: novosPontos,
+                ultimoSimulado: new Date().toISOString(),
+                ultimaPontuacao: percentual.toFixed(1)
+            });
+            currentUser.pontos = novosPontos;
+            currentUser.ultimoSimulado = new Date().toISOString();
+            currentUser.ultimaPontuacao = percentual.toFixed(1);
+        }
         const resultsDiv = document.getElementById('resultsPanel');
         resultsDiv.style.display = 'block';
         let botoes = '';
@@ -566,26 +580,32 @@
             botoes = `<p style="color:#c0392b;">🔒 Atingiu ${percentual.toFixed(1)}% – mínimo 70% para baixar o PDF.</p><p><i class="fab fa-youtube"></i> <a href="https://www.youtube.com/@EstudandoTI_Brasil" target="_blank" style="color:#0b5e7c;">Assista as aulas no Youtube</a> para melhorar seu desempenho!</p>`;
         }
         resultsDiv.innerHTML = `<h3>Resultado Final</h3><div class="score">${acertos}/${questoesAtuais.length} (${percentual.toFixed(1)}%)</div><p>+${pontosGanhos} pontos (${acertos} acertos × 5)</p>${botoes}<button id="restartBtn" class="btn" style="margin-top:1rem;"><i class="fas fa-sync-alt"></i> Refazer Simulado</button>`;
-        document.getElementById('restartBtn')?.addEventListener('click', () => { localStorage.removeItem(storageKey); iniciarSimulado(areaAtual); });
+        document.getElementById('restartBtn')?.addEventListener('click', () => { iniciarSimulado(areaAtual); });
         if (percentual >= 70 && currentUser.downloadsRestantes > 0) {
             const downloadBtn = document.getElementById('downloadPdfBtn');
-            if (downloadBtn) downloadBtn.addEventListener('click', () => {
-                if (currentUser.downloadsRestantes > 0) { currentUser.downloadsRestantes--; atualizarUsuario(currentUser); alert(`Download liberado! Restam ${currentUser.downloadsRestantes} downloads.`); window.open(areaAtual.pdf, '_blank'); downloadBtn.disabled = true; downloadBtn.style.opacity = '0.5'; }
-                else alert("Sem downloads disponíveis.");
+            if (downloadBtn) downloadBtn.addEventListener('click', async () => {
+                if (currentUser.downloadsRestantes > 0) {
+                    const novosDownloads = currentUser.downloadsRestantes - 1;
+                    await atualizarUsuarioNoFirestore({ downloadsRestantes: novosDownloads });
+                    currentUser.downloadsRestantes = novosDownloads;
+                    alert(`Download liberado! Restam ${novosDownloads} downloads.`);
+                    window.open(areaAtual.pdf, '_blank');
+                    downloadBtn.disabled = true; downloadBtn.style.opacity = '0.5';
+                } else alert("Sem downloads disponíveis.");
             });
         }
         document.getElementById('submitBtn').disabled = true; document.getElementById('submitBtn').style.opacity = '0.6';
-        localStorage.removeItem(storageKey);
+        await db.collection('progresso').doc(`${currentUserUid}_${areaAtual.id}`).delete();
         atualizarRanking();
     }
-    function iniciarSimulado(area) {
+    async function iniciarSimulado(area) {
         areaAtual = area;
         const questoesBase = obterQuestoesDaArea(area.id);
         questoesAtuais = questoesBase.map(q => shuffleOptions(q));
-        storageKey = `simulado_${area.id}_${currentUser.id}`;
-        carregarProgressoSimulado();
+        await carregarProgressoSimulado();
         simuladoFinalizado = false;
-        if (!localStorage.getItem(storageKey)) tempoRestante = 600;
+        const docExists = await db.collection('progresso').doc(`${currentUserUid}_${areaAtual.id}`).get();
+        if (!docExists.exists) tempoRestante = 600;
         atualizarTimerUI();
         if (timerInterval) clearInterval(timerInterval);
         iniciarTimer();
@@ -604,50 +624,124 @@
     // ==================== CONTROLE DE TELAS ====================
     function showScreen(screenId) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(screenId).classList.add('active'); }
 
-    // ==================== LOGIN E CADASTRO ====================
-    function fazerLogin() {
+    // ==================== LOGIN E CADASTRO (FIREBASE) ====================
+    async function fazerLogin() {
         const email = document.getElementById('loginEmail').value.trim();
         const senha = document.getElementById('loginSenha').value;
-        const user = autenticar(email, senha);
-        if (user) { currentUser = user; localStorage.setItem('usuarioLogado', JSON.stringify({ id: user.id, nome: user.nome, email: user.email, pontos: user.pontos, downloadsRestantes: user.downloadsRestantes })); renderDashboard(); showScreen('dashboardScreen'); }
-        else { document.getElementById('authMsg').innerText = 'E-mail ou senha inválidos.'; }
+        try {
+            await auth.signInWithEmailAndPassword(email, senha);
+        } catch (error) {
+            document.getElementById('authMsg').innerText = 'E-mail ou senha inválidos.';
+        }
     }
-    function fazerCadastro() {
+    async function fazerCadastro() {
         const nome = document.getElementById('regNome').value.trim();
         const email = document.getElementById('regEmail').value.trim();
         const senha = document.getElementById('regSenha').value;
-        if (!nome || !email || !senha) { document.getElementById('regMsg').innerText = 'Preencha todos os campos.'; return; }
-        if (adicionarUsuario(nome, email, senha)) { document.getElementById('regMsg').innerText = 'Cadastro realizado! Faça login.'; setTimeout(() => { document.getElementById('loginSection').style.display = 'block'; document.getElementById('registerSection').style.display = 'none'; }, 1500); }
-        else { document.getElementById('regMsg').innerText = 'E-mail já existe.'; }
+        if (!nome || !email || !senha) {
+            document.getElementById('regMsg').innerText = 'Preencha todos os campos.';
+            return;
+        }
+        try {
+            const cred = await auth.createUserWithEmailAndPassword(email, senha);
+            await db.collection('usuarios').doc(cred.user.uid).set({
+                nome, email, pontos: 0, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null, isAdmin: false
+            });
+            document.getElementById('regMsg').innerText = 'Cadastro realizado! Faça login.';
+            setTimeout(() => {
+                document.getElementById('loginSection').style.display = 'block';
+                document.getElementById('registerSection').style.display = 'none';
+            }, 1500);
+        } catch (error) {
+            document.getElementById('regMsg').innerText = error.message;
+        }
     }
-    function logout() { localStorage.removeItem('usuarioLogado'); location.reload(); }
+    async function logout() {
+        await auth.signOut();
+        location.reload();
+    }
+
+    // ==================== ALTERAR SENHA (FIREBASE) ====================
+    async function alterarMinhaSenha(senhaAtual, novaSenha) {
+        const user = auth.currentUser;
+        const credential = firebase.auth.EmailAuthProvider.credential(user.email, senhaAtual);
+        try {
+            await user.reauthenticateWithCredential(credential);
+            await user.updatePassword(novaSenha);
+            alert("Senha alterada com sucesso!");
+            return true;
+        } catch (error) {
+            alert("Senha atual incorreta ou erro: " + error.message);
+            return false;
+        }
+    }
+
+    // ==================== LISTENER DE AUTENTICAÇÃO ====================
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            currentUserUid = user.uid;
+            const doc = await db.collection('usuarios').doc(user.uid).get();
+            if (doc.exists) {
+                currentUser = { uid: user.uid, ...doc.data() };
+            } else {
+                const novoUsuario = {
+                    nome: user.email.split('@')[0],
+                    email: user.email,
+                    pontos: 0,
+                    downloadsRestantes: 3,
+                    ultimoSimulado: null,
+                    ultimaPontuacao: null,
+                    isAdmin: false
+                };
+                await db.collection('usuarios').doc(user.uid).set(novoUsuario);
+                currentUser = { uid: user.uid, ...novoUsuario };
+            }
+            renderDashboard();
+            showScreen('dashboardScreen');
+        } else {
+            showScreen('loginScreen');
+        }
+    });
 
     // ==================== MODAL ALTERAR SENHA ====================
     const modal = document.getElementById('changePwdModal');
     document.getElementById('changePwdBtn').addEventListener('click', () => { modal.style.display = 'flex'; });
     document.getElementById('closeModal').addEventListener('click', () => { modal.style.display = 'none'; });
-    document.getElementById('confirmChangePwd').addEventListener('click', () => {
+    document.getElementById('confirmChangePwd').addEventListener('click', async () => {
         const oldPwd = document.getElementById('oldPassword').value;
         const newPwd = document.getElementById('newPassword').value;
         const confirmPwd = document.getElementById('confirmPassword').value;
         if (newPwd !== confirmPwd) { alert("Nova senha e confirmação não conferem."); return; }
-        if (alterarMinhaSenha(oldPwd, newPwd)) { modal.style.display = 'none'; document.getElementById('oldPassword').value = ''; document.getElementById('newPassword').value = ''; document.getElementById('confirmPassword').value = ''; }
+        if (await alterarMinhaSenha(oldPwd, newPwd)) {
+            modal.style.display = 'none';
+            document.getElementById('oldPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+        }
     });
 
-    // ==================== INICIALIZAÇÃO ====================
-    inicializarUsuarios();
-    const savedUser = localStorage.getItem('usuarioLogado');
-    if (savedUser) { const data = JSON.parse(savedUser); const user = getUsuarios().find(u => u.id === data.id && u.ativo); if (user) { currentUser = user; renderDashboard(); showScreen('dashboardScreen'); } else { showScreen('loginScreen'); } }
-    else { showScreen('loginScreen'); }
-
+    // ==================== EVENTOS GLOBAIS ====================
     document.getElementById('loginBtn').addEventListener('click', fazerLogin);
     document.getElementById('registerBtn').addEventListener('click', fazerCadastro);
-    document.getElementById('showRegister').addEventListener('click', () => { document.getElementById('loginSection').style.display = 'none'; document.getElementById('registerSection').style.display = 'block'; });
-    document.getElementById('showLogin').addEventListener('click', () => { document.getElementById('loginSection').style.display = 'block'; document.getElementById('registerSection').style.display = 'none'; });
+    document.getElementById('showRegister').addEventListener('click', () => {
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('registerSection').style.display = 'block';
+    });
+    document.getElementById('showLogin').addEventListener('click', () => {
+        document.getElementById('loginSection').style.display = 'block';
+        document.getElementById('registerSection').style.display = 'none';
+    });
     document.getElementById('logoutBtn').addEventListener('click', logout);
-    document.getElementById('adminPanelBtn').addEventListener('click', () => { renderAdminPanel(); showScreen('adminScreen'); });
+    document.getElementById('adminPanelBtn').addEventListener('click', () => {
+        renderAdminPanel();
+        showScreen('adminScreen');
+    });
     document.getElementById('backFromAdmin').addEventListener('click', () => showScreen('dashboardScreen'));
-    document.getElementById('backToDashboard').addEventListener('click', () => { if (timerInterval) clearInterval(timerInterval); showScreen('dashboardScreen'); atualizarRanking(); });
+    document.getElementById('backToDashboard').addEventListener('click', () => {
+        if (timerInterval) clearInterval(timerInterval);
+        showScreen('dashboardScreen');
+        atualizarRanking();
+    });
 </script>
 </body>
 </html>
