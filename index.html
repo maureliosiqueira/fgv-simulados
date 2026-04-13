@@ -232,7 +232,6 @@
         progresso: "&id, respostas, tempoRestante, indiceAtual"
     });
 
-    // Dados padrão
     function inicializarDadosPadrao() {
         return db.usuarios.count().then(count => {
             if (count === 0) {
@@ -247,7 +246,6 @@
 
     let currentUser = null;
 
-    // Funções CRUD
     function autenticar(email, senha) {
         return db.usuarios.where({ email, senha }).first();
     }
@@ -420,7 +418,6 @@
                 const actions = row.insertCell(7);
                 actions.innerHTML = `<button class="save-user" data-id="${u.id}">Salvar</button> <button class="reset-pwd" data-id="${u.id}">Reset Senha</button> <button class="delete-user" data-id="${u.id}">Excluir</button>`;
             });
-            // Eventos
             document.querySelectorAll('.save-user').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const id = parseInt(btn.getAttribute('data-id'));
@@ -717,7 +714,6 @@
 
     iniciarApp();
 
-    // Eventos globais
     document.getElementById('loginBtn').addEventListener('click', fazerLogin);
     document.getElementById('registerBtn').addEventListener('click', fazerCadastro);
     document.getElementById('showRegister').addEventListener('click', () => {
