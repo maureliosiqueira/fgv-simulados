@@ -36,6 +36,10 @@
         .badges-panel { margin-top: 1rem; border-top: 1px solid #e2edf2; padding-top: 1rem; }
         .badge-icon { font-size: 1.4rem; margin-right: 0.3rem; display: inline-block; opacity: 0.5; }
         .badge-icon.earned { opacity: 1; color: #ffaa33; }
+        .quiz-panel { margin-top: 1rem; border-top: 1px solid #e2edf2; padding-top: 1rem; }
+        .quiz-panel h4 { margin-bottom: 0.5rem; color: #0b5e7c; }
+        .quiz-alternativas label { display: block; margin: 0.3rem 0; cursor: pointer; }
+        .chart-container { max-width: 100%; margin-top: 1rem; }
         .cards-grid { flex: 3; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
         .card { background: white; border-radius: 1.5rem; border: 1px solid #e2edf2; box-shadow: 0 5px 15px rgba(0,0,0,0.05); transition: transform 0.2s; }
         .card:hover { transform: translateY(-5px); }
@@ -101,13 +105,12 @@
         .modal-content button { margin-top: 1rem; }
         .btn-download { background: #28a745; color: white; font-weight: bold; font-size: 1rem; padding: 0.6rem 1.5rem; }
         .btn-download:hover { background: #218838; }
-        .chart-container { max-width: 400px; margin-top: 1rem; }
-        @media (max-width:800px) { .simulator-content { flex-direction: column; } .nav-panel { position: static; } .two-columns { flex-direction: column; } .chart-container { max-width: 100%; } }
+        @media (max-width:800px) { .simulator-content { flex-direction: column; } .nav-panel { position: static; } .two-columns { flex-direction: column; } }
     </style>
 </head>
 <body>
 
-<!-- TELA DE LOGIN/CADASTRO (mesma da versão anterior) -->
+<!-- TELA DE LOGIN/CADASTRO -->
 <div id="loginScreen" class="screen active">
     <div class="header">
         <i class="fab fa-youtube fa-4x" style="color:#c0392b;"></i>
@@ -158,6 +161,10 @@
             <h3><i class="fas fa-trophy"></i> Ranking de Pontuação</h3>
             <ul id="rankingList" class="ranking-list"></ul>
             <div class="badges-panel" id="badgesPanel"></div>
+            <div class="quiz-panel" id="quizDiarioPanel">
+                <h4><i class="fas fa-calendar-day"></i> Quiz Diário</h4>
+                <div id="quizDiarioContent">Carregando...</div>
+            </div>
             <div class="chart-container">
                 <canvas id="pontosChart"></canvas>
             </div>
@@ -262,12 +269,38 @@
 </div>
 
 <script>
-    // ==================== INDEXEDDB (DEXIE) ====================
+    // ==================== INDEXEDDB (DEXIE) COM UPGRADE PARA QUIZZES ====================
     const db = new Dexie("EstudandoTIDB");
     db.version(1).stores({
         usuarios: "++id, nome, email, senha, pontos, downloadsRestantes, ultimoSimulado, ultimaPontuacao, isAdmin, badges, historicoPontos",
         progresso: "&id, respostas, tempoRestante, indiceAtual, modoEstudoAtivo",
         areasConfig: "++id, areaId, disponivel"
+    });
+    db.version(2).stores({
+        quizzes: "++id, data, pergunta, alternativas, correta, explicacao, ativo",
+        respostasQuiz: "++id, usuarioId, quizId, resposta, dataResposta, pontosGanhos"
+    }).upgrade(tx => {
+        tx.table('quizzes').count().then(count => {
+            if (count === 0) {
+                // Inicializa quizzes para os próximos dias (exemplo)
+                const hoje = new Date();
+                const quizzesExemplo = [];
+                for (let i = 0; i < 7; i++) {
+                    const data = new Date(hoje);
+                    data.setDate(hoje.getDate() + i);
+                    const dataStr = data.toISOString().slice(0,10);
+                    quizzesExemplo.push({
+                        data: dataStr,
+                        pergunta: i === 0 ? "Qual das seguintes é uma característica do NoSQL?" : "Pergunta de exemplo para " + dataStr,
+                        alternativas: i === 0 ? ["Esquema fixo", "ACID estrito", "Escalabilidade horizontal", "Junções complexas"] : ["Alternativa A", "Alternativa B", "Alternativa C", "Alternativa D"],
+                        correta: i === 0 ? 2 : 0,
+                        explicacao: i === 0 ? "NoSQL é conhecido por escalabilidade horizontal, flexibilidade de esquema e alta performance para grandes volumes." : "Explicação de exemplo.",
+                        ativo: true
+                    });
+                }
+                tx.table('quizzes').bulkAdd(quizzesExemplo);
+            }
+        });
     });
 
     function inicializarDadosPadrao() {
@@ -285,7 +318,7 @@
     let currentUser = null;
     let chartInstance = null;
 
-    // Funções CRUD (idênticas à versão anterior, mas com badges e historico)
+    // Funções CRUD (usuários)
     function autenticar(email, senha) { return db.usuarios.where({ email, senha }).first(); }
     function adicionarUsuario(nome, email, senha) {
         return db.usuarios.where({ email }).first().then(existente => {
@@ -320,7 +353,6 @@
     function verificarConquistas(usuario, resultadoSimulado) {
         let novasBadges = [...(usuario.badges || [])];
         if (!novasBadges.includes("primeiro_simulado")) {
-            // Verificar se é o primeiro simulado concluído (contar quantos simulados já fez)
             const totalSimulados = (usuario.historicoPontos || []).length;
             if (totalSimulados === 0) novasBadges.push("primeiro_simulado");
         }
@@ -346,7 +378,7 @@
             '</div>';
     }
 
-    // ==================== GRÁFICO DE EVOLUÇÃO ====================
+    // ==================== GRÁFICO ====================
     function atualizarGrafico(usuario) {
         const ctx = document.getElementById('pontosChart').getContext('2d');
         const historico = usuario.historicoPontos || [];
@@ -360,7 +392,68 @@
         });
     }
 
-    // ==================== ÁREAS (com novas disciplinas "Em breve") ====================
+    // ==================== QUIZ DIÁRIO ====================
+    async function obterQuizDoDia() {
+        const hoje = new Date().toISOString().slice(0,10);
+        return await db.quizzes.where({ data: hoje, ativo: true }).first();
+    }
+    async function usuarioJaRespondeuQuiz(usuarioId, quizId) {
+        const resp = await db.respostasQuiz.where({ usuarioId, quizId }).first();
+        return !!resp;
+    }
+    async function responderQuiz(usuarioId, quizId, respostaIndex, pontos) {
+        await db.respostasQuiz.add({
+            usuarioId, quizId, resposta: respostaIndex, dataResposta: new Date().toISOString(), pontosGanhos: pontos
+        });
+        const usuario = await db.usuarios.get(usuarioId);
+        if (usuario) {
+            usuario.pontos += pontos;
+            await db.usuarios.update(usuarioId, { pontos: usuario.pontos });
+            if (currentUser && currentUser.id === usuarioId) {
+                currentUser.pontos = usuario.pontos;
+                localStorage.setItem('usuarioLogado', JSON.stringify({ id: currentUser.id, nome: currentUser.nome, email: currentUser.email, pontos: currentUser.pontos, downloadsRestantes: currentUser.downloadsRestantes }));
+            }
+        }
+    }
+    async function carregarQuizDiario() {
+        const container = document.getElementById('quizDiarioContent');
+        if (!container) return;
+        const quiz = await obterQuizDoDia();
+        if (!quiz) {
+            container.innerHTML = '<p>Nenhum quiz disponível hoje. Volte amanhã!</p>';
+            return;
+        }
+        const jaRespondeu = await usuarioJaRespondeuQuiz(currentUser.id, quiz.id);
+        if (jaRespondeu) {
+            container.innerHTML = '<p>✅ Você já respondeu o quiz de hoje! Volte amanhã para um novo desafio.</p>';
+            return;
+        }
+        let html = `<p><strong>${quiz.pergunta}</strong></p><div class="quiz-alternativas">`;
+        quiz.alternativas.forEach((alt, idx) => {
+            html += `<label><input type="radio" name="quizResposta" value="${idx}"> ${alt}</label><br>`;
+        });
+        html += `</div><button id="btnResponderQuiz" class="btn" style="margin-top:0.5rem;">Responder (vale 10 pontos se acertar, 5 por participar)</button>`;
+        container.innerHTML = html;
+        document.getElementById('btnResponderQuiz')?.addEventListener('click', async () => {
+            const selected = document.querySelector('input[name="quizResposta"]:checked');
+            if (!selected) { alert("Escolha uma alternativa."); return; }
+            const resposta = parseInt(selected.value);
+            const isCorrect = (resposta === quiz.correta);
+            const pontos = isCorrect ? 10 : 5;
+            await responderQuiz(currentUser.id, quiz.id, resposta, pontos);
+            const explicacao = quiz.explicacao;
+            container.innerHTML = `<div style="background:#f0f7fa; padding:0.5rem; border-radius:0.5rem;">
+                <strong>${isCorrect ? '✅ Correta!' : '❌ Incorreta!'}</strong><br>
+                ${explicacao}<br>
+                Você ganhou ${pontos} ponto(s)!
+            </div>`;
+            atualizarRanking();
+            renderBadges(currentUser);
+            atualizarGrafico(currentUser);
+        });
+    }
+
+    // ==================== ÁREAS (COM NOVAS DISCIPLINAS "EM BREVE") ====================
     const areas = [
         { id: "cientista-dados", nome: "Cientista de Dados", icone: "brain", pdf: "ebook-cientista-dados.pdf", disponivel: true },
         { id: "engenheiro-dados", nome: "Engenheiro de Dados", icone: "database", pdf: "ebook-Engenheiro-Dados.pdf", disponivel: true },
@@ -374,7 +467,7 @@
         { id: "ingles-tecnico", nome: "Inglês Técnico", icone: "language", pdf: null, disponivel: false }
     ];
 
-    // ==================== GERADOR DE QUESTÕES (mesmo anterior) ====================
+    // ==================== GERADOR DE QUESTÕES ====================
     function obterQuestoesDaArea(areaId) {
         const topicosPorArea = {
             "cientista-dados": ["Regressão Linear", "Overfitting", "Validação Cruzada", "PCA", "Clusterização", "Redes Neurais", "Árvores de Decisão", "SVM", "Naive Bayes", "Ensemble", "Métricas de Avaliação", "SQL para Análise", "Data Warehouse", "Business Intelligence", "Estatística Descritiva", "Teste de Hipóteses", "Distribuições", "Deep Learning", "CNN", "RNN", "IA Generativa", "LLM", "Geoprocessamento", "LGPD", "Ética em IA", "Data Mining", "Visualização de Dados", "Big Data", "Spark", "ETL"],
@@ -384,7 +477,6 @@
             "analista-sistemas": ["Arquitetura de Software", "Java/Spring", "Front-end (React, Angular)", "Testes (unitários, integração)", "DevOps", "Containers (Docker)", "Microsserviços", "APIs REST", "GraphQL", "Bancos de Dados Relacionais", "ORM", "Design Patterns", "SOLID", "Clean Code", "Versionamento (Git)", "CI/CD (Jenkins, GitLab CI)", "Cloud Native", "Mensageria (RabbitMQ, Kafka)", "Segurança em Aplicações", "OAuth2", "JWT", "Metodologias Ágeis (Scrum, Kanban)", "Documentação", "Arquitetura Hexagonal", "DDD", "TDD", "BDD", "Observabilidade", "Performance", "Monitoramento"],
             "analista-ux": ["Design Centrado no Usuário", "Heurísticas de Nielsen", "Prototipação (Figma, Sketch)", "Pesquisa com Usuários", "Acessibilidade (WCAG)", "UX Writing", "Arquitetura da Informação", "Testes de Usabilidade", "Card Sorting", "Personas", "Jornada do Usuário", "Wireframes", "Design System", "UI Design", "Cores e Tipografia", "Design Responsivo", "Microinterações", "Mobile First", "Design Thinking", "Entrevistas", "Questionários", "Análise de Concorrência", "Métrica de UX (SUS, NPS)", "Emoção do Usuário", "Neuro UX", "Inclusão Digital", "Design Ético", "Governança de UX", "Design Ops", "Portfólio de UX"]
         };
-        // Para áreas "em breve", retorna array vazio (não será usado)
         if (!topicosPorArea[areaId]) return [];
         const questoes = [];
         const temas = topicosPorArea[areaId];
@@ -464,13 +556,14 @@
     }
 
     // ==================== DASHBOARD ====================
-    function renderDashboard() {
+    async function renderDashboard() {
         document.getElementById('userNameDisplay').innerText = `Olá, ${currentUser.nome}`;
         const adminBtn = document.getElementById('adminPanelBtn');
         if (currentUser.isAdmin) adminBtn.style.display = 'inline-block';
         else adminBtn.style.display = 'none';
         renderBadges(currentUser);
         atualizarGrafico(currentUser);
+        await carregarQuizDiario(); // Carrega o quiz diário
         const container = document.getElementById('cardsGrid');
         container.innerHTML = '';
         areas.forEach(area => {
@@ -510,7 +603,6 @@
         document.querySelectorAll('.toggle-study-mode').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const areaId = btn.getAttribute('data-area-id');
-                // Recupera ou cria configuração de modo estudo para essa área
                 let config = await db.areasConfig.where({ areaId }).first();
                 if (!config) config = { areaId, modoEstudoAtivo: false };
                 const novoModo = !config.modoEstudoAtivo;
@@ -518,7 +610,6 @@
                 btn.style.background = novoModo ? '#28a745' : '#6c757d';
                 btn.innerHTML = novoModo ? '<i class="fas fa-check-circle"></i> Modo estudo ativo' : '<i class="fas fa-graduation-cap"></i> Modo estudo';
             });
-            // Carregar estado atual
             (async () => {
                 const areaId = btn.getAttribute('data-area-id');
                 const config = await db.areasConfig.where({ areaId }).first();
@@ -697,7 +788,7 @@
                 atualizarNavegacaoUI();
                 atualizarBarraProgresso();
                 salvarProgressoSimulado();
-                if (modoEstudo) renderizarQuestao(); // atualiza feedback
+                if (modoEstudo) renderizarQuestao();
             });
         });
     }
@@ -744,10 +835,9 @@
             currentUser.pontos += pontosGanhos;
             currentUser.ultimoSimulado = new Date().toISOString();
             currentUser.ultimaPontuacao = percentual.toFixed(1);
-            // Atualiza histórico de pontos
             const historico = currentUser.historicoPontos || [];
             historico.push({ data: new Date().toISOString(), pontos: currentUser.pontos });
-            currentUser.historicoPontos = historico.slice(-7); // mantém últimos 7
+            currentUser.historicoPontos = historico.slice(-7);
             novasBadges = verificarConquistas(currentUser, { percentual });
             currentUser.badges = [...(currentUser.badges || []), ...novasBadges.filter(b => !currentUser.badges.includes(b))];
             updatePromise = atualizarUsuario(currentUser);
@@ -882,17 +972,15 @@
         modoEstudo = !modoEstudo;
         document.getElementById('studyModeToggle').classList.toggle('active', modoEstudo);
         if (modoEstudo) {
-            // Se ativar modo estudo, desabilita o timer (parar contagem)
             if (timerInterval) clearInterval(timerInterval);
             document.getElementById('timerDisplay').style.opacity = '0.5';
         } else {
-            // Reativar timer com o tempo atual
             if (timerInterval) clearInterval(timerInterval);
             iniciarTimer();
             document.getElementById('timerDisplay').style.opacity = '1';
         }
         salvarProgressoSimulado();
-        renderizarQuestao(); // para atualizar feedback imediato
+        renderizarQuestao();
     });
 
     // ==================== INICIALIZAÇÃO ====================
