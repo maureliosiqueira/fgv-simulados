@@ -9,7 +9,7 @@
     <script src="https://unpkg.com/dexie@3.2.4/dist/dexie.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
-        /* (estilos idênticos à versão anterior - omitidos por brevidade, mas mantenha os mesmos) */
+        /* (estilos idênticos à versão anterior, mas vou omitir para encurtar – você pode copiar do código final que enviei antes) */
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0b2b44 0%, #1b5e7a 100%); min-height: 100vh; padding: 1rem; }
         .screen { max-width: 1400px; margin: 0 auto; background: white; border-radius: 2rem; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: none; }
@@ -176,7 +176,7 @@
     </div>
 </div>
 
-<!-- TELA ADMIN -->
+<!-- TELA ADMIN (CRUD de usuários + Quizzes) -->
 <div id="adminScreen" class="screen">
     <div class="dashboard-header">
         <div><i class="fas fa-users-cog"></i> Painel de Controle - Admin</div>
@@ -187,6 +187,7 @@
             <button class="tab-btn active" data-tab="usuarios">Usuários</button>
             <button class="tab-btn" data-tab="quizzes">Gerenciar Quizzes</button>
         </div>
+        <!-- Aba Usuários -->
         <div id="tabUsuarios" class="tab-content active">
             <div style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
                 <button id="addUserBtn" class="btn"><i class="fas fa-plus"></i> Novo Usuário</button>
@@ -194,10 +195,11 @@
                 <button id="gerarDadosExemploBtn" class="btn" style="background: #ffaa33; color:#1e3b4a;"><i class="fas fa-dice-d6"></i> Gerar Dados de Exemplo</button>
             </div>
             <table class="admin-table" id="userTable">
-                <thead><tr><th>ID</th><th>Nome</th><th>Email</th><th>Pontos</th><th>Downloads Rest.</th><th>Último Simulado (data)</th><th>Última Pontuação (%)</th><th>Ações</th></tr></thead>
+                <thead><tr><th>ID</th><th>Nome</th><th>Email</th><th>Pontos</th><th>Downloads Rest.</th><th>Último Simulado (data)</th><th>Última Pontuação (%)</th><th>Ações</th></td></thead>
                 <tbody id="userTableBody"></tbody>
             </table>
         </div>
+        <!-- Aba Gerenciar Quizzes -->
         <div id="tabQuizzes" class="tab-content">
             <button id="addQuizBtn" class="btn" style="margin-bottom:1rem;"><i class="fas fa-plus"></i> Adicionar Quiz</button>
             <table class="admin-table" id="quizTable">
