@@ -12,7 +12,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        /* Estilos (mesmos da versão anterior - vou reutilizar os que já estavam funcionando) */
+        /* (estilos idênticos à versão anterior, com acréscimos para o modal de ajuda) */
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0b2b44 0%, #1b5e7a 100%); min-height: 100vh; padding: 1rem; }
         .screen { max-width: 1400px; margin: 0 auto; background: white; border-radius: 2rem; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: none; }
@@ -51,13 +51,14 @@
         .card-header { background: #f0f7fa; padding: 1rem; display: flex; align-items: center; gap: 0.8rem; border-bottom: 2px solid #ffaa33; }
         .card-header i { font-size: 1.8rem; color: #0b5e7c; }
         .card-body { padding: 1rem; }
-        .btn-group { display: flex; gap: 0.6rem; margin-top: 1rem; flex-wrap: wrap; }
+        .btn-group { display: flex; gap: 0.6rem; margin-top: 1rem; flex-wrap: wrap; align-items: center; }
         .btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.4rem 1rem; border-radius: 2rem; text-decoration: none; font-weight: 600; font-size: 0.8rem; background: #0b5e7c; color: white; cursor: pointer; border: none; }
         .btn-secondary { background: #e2edf2; color: #1e3b4a; }
         .btn-disabled { background: #ccc; cursor: not-allowed; position: relative; }
         .btn-disabled:hover::after { content: "Disponível em breve"; position: absolute; bottom: 120%; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; white-space: nowrap; z-index: 10; }
         .study-mode { background: #28a745; }
         .study-mode.active { background: #ffaa33; color: #1e3b4a; }
+        .help-icon { background: #ffaa33; color: #1e3b4a; border-radius: 50%; width: 1.6rem; height: 1.6rem; display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; cursor: pointer; margin-left: 0.3rem; }
         .pdf-destaque { background: #ffecb3; border-radius: 1rem; padding: 0.5rem; margin-top: 0.8rem; font-size: 0.75rem; text-align: center; color: #b45f06; font-weight: 500; }
         .footer-links { background: #e9f0f4; padding: 1rem; text-align: center; font-size: 0.8rem; border-top: 1px solid #cde0e8; }
         .social-icons { display: flex; justify-content: center; gap: 1.5rem; margin-bottom: 0.5rem; }
@@ -67,7 +68,7 @@
         .hotmart-link { background: #ffaa33; color: #1e3b4a; padding: 0.3rem 1rem; border-radius: 2rem; display: inline-block; margin-top: 0.5rem; font-weight: bold; text-decoration: none; }
         .hotmart-link:hover { background: #0b5e7c; color: white; }
         .admin-panel { padding: 2rem; overflow-x: auto; }
-        .admin-table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        .admin-table { width: 100%; border-collapse: collapse; min-width: 900px; }
         .admin-table th, .admin-table td { border: 1px solid #cde0e8; padding: 0.5rem; text-align: left; vertical-align: middle; }
         .admin-table th { background: #f0f7fa; }
         .admin-table input { width: 100%; padding: 0.2rem; border: 1px solid #ccc; border-radius: 0.3rem; }
@@ -200,7 +201,7 @@
                 <button id="gerarDadosExemploBtn" class="btn" style="background: #ffaa33; color:#1e3b4a;"><i class="fas fa-dice-d6"></i> Gerar Dados de Exemplo</button>
             </div>
             <table class="admin-table" id="userTable">
-                <thead><tr><th>ID</th><th>Nome</th><th>Email</th><th>Pontos</th><th>Downloads Rest.</th><th>Último Simulado (data)</th><th>Última Pontuação (%)</th><th>Certificado</th><th>Ações</th></tr></thead>
+                <thead><tr><th>ID</th><th>Nome</th><th>Email</th><th>Pontos</th><th>Downloads Rest.</th><th>Último Simulado (data)</th><th>Última Pontuação (%)</th><th>Módulos Concluídos</th><th>Certificado</th><th>Ações</th></tr></thead>
                 <tbody id="userTableBody"></tbody>
             </table>
         </div>
@@ -307,6 +308,26 @@
     </div>
 </div>
 
+<!-- Modal explicativo sobre Modo Estudo -->
+<div id="modoEstudoHelpModal" class="modal">
+    <div class="modal-content">
+        <h3><i class="fas fa-graduation-cap"></i> Modo Estudo vs Modo Simulado</h3>
+        <table style="width:100%; border-collapse:collapse; margin:1rem 0;">
+            <thead><tr style="background:#f0f7fa;"><th>Característica</th><th>Modo Simulado</th><th>Modo Estudo</th></tr></thead>
+            <tbody>
+                <tr><td>⏱️ Timer</td><td>10 minutos</td><td>Sem limite</td></tr>
+                <tr><td>💬 Feedback imediato</td><td>❌ Não</td><td>✅ Sim (após cada resposta)</td></tr>
+                <tr><td>🎯 Objetivo</td><td>Avaliar sob pressão</td><td>Aprender no seu ritmo</td></tr>
+                <tr><td>🏆 Pontuação</td><td>5 pontos por acerto</td><td>5 pontos por acerto</td></tr>
+                <tr><td>📥 Download PDF</td><td>Liberado se ≥70%</td><td>Liberado se ≥70%</td></tr>
+                <tr><td>💾 Salva progresso</td><td>Sim</td><td>Sim</td></tr>
+            </tbody>
+        </table>
+        <p>💡 <strong>Dica:</strong> Use o Modo Estudo para aprender e o Modo Simulado para treinar para a prova!</p>
+        <button id="closeModoEstudoHelp" class="btn">Entendi</button>
+    </div>
+</div>
+
 <!-- Modal alterar senha -->
 <div id="changePwdModal" class="modal">
     <div class="modal-content">
@@ -388,18 +409,14 @@
 
     // ==================== CERTIFICADO ====================
     const areasCertificado = ["cientista-dados", "engenheiro-dados", "analista-seguranca", "analista-infraestrutura", "analista-sistemas", "analista-ux"];
-    function verificarConclusaoCertificado() {
-        if (!currentUser) return false;
-        const concluidos = currentUser.simuladosConcluidos || [];
-        const todasConcluidas = areasCertificado.every(area => concluidos.includes(area));
-        return todasConcluidas;
+    function verificarConclusaoCertificado(usuario = currentUser) {
+        if (!usuario) return false;
+        const concluidos = usuario.simuladosConcluidos || [];
+        return areasCertificado.every(area => concluidos.includes(area));
     }
 
-    function obterDatasCertificado() {
-        const concluidos = currentUser.simuladosConcluidos || [];
-        // Buscar as datas de conclusão (usando o campo ultimoSimulado de cada área? Vamos usar o histórico de pontos ou uma nova estrutura)
-        // Para simplificar, vou usar a data de primeiro simulado (mais antiga) e a data de último simulado (mais recente)
-        const historico = currentUser.historicoPontos || [];
+    function obterDatasCertificado(usuario = currentUser) {
+        const historico = usuario.historicoPontos || [];
         if (historico.length === 0) return { inicio: null, fim: null };
         const datas = historico.map(h => new Date(h.data)).sort((a,b) => a - b);
         return { inicio: datas[0], fim: datas[datas.length-1] };
@@ -409,16 +426,18 @@
         return 'xxxx-xxxx-xxxx-xxxx'.replace(/x/g, () => (Math.random() * 16 | 0).toString(16).toUpperCase());
     }
 
-    async function emitirCertificado(dados) {
-        if (!verificarConclusaoCertificado()) {
-            alert("Você ainda não concluiu todos os 6 módulos.");
-            return;
+    async function emitirCertificado(usuarioId, dados) {
+        const usuario = await db.usuarios.get(usuarioId);
+        if (!usuario) return null;
+        if (!verificarConclusaoCertificado(usuario)) {
+            alert("Usuário não concluiu todos os 6 módulos.");
+            return null;
         }
-        if (currentUser.certificadoEmitido) {
-            alert("Você já emitiu seu certificado. Se precisar de outro, contate o administrador.");
-            return;
+        if (usuario.certificadoEmitido) {
+            alert("Este usuário já emitiu certificado.");
+            return null;
         }
-        const { inicio, fim } = obterDatasCertificado();
+        const { inicio, fim } = obterDatasCertificado(usuario);
         const codigo = gerarCodigoAutenticidade();
         const certificado = {
             nome: dados.nome,
@@ -429,14 +448,15 @@
             codigo: codigo,
             emitidoEm: new Date().toISOString()
         };
-        await db.usuarios.update(currentUser.id, { certificadoEmitido: true, certificadoDados: certificado });
-        currentUser.certificadoEmitido = true;
-        currentUser.certificadoDados = certificado;
+        await db.usuarios.update(usuarioId, { certificadoEmitido: true, certificadoDados: certificado });
+        if (currentUser && currentUser.id === usuarioId) {
+            currentUser.certificadoEmitido = true;
+            currentUser.certificadoDados = certificado;
+        }
         return certificado;
     }
 
     async function gerarPDFCertificado(certificado) {
-        // Criar um elemento temporário para renderizar o certificado
         const div = document.createElement('div');
         div.style.width = '800px';
         div.style.padding = '40px';
@@ -634,7 +654,7 @@
         { id: "ingles-tecnico", nome: "Inglês Técnico", icone: "language", pdf: null, disponivel: false }
     ];
 
-    // ==================== GERADOR DE QUESTÕES (mesmo das versões anteriores) ====================
+    // ==================== GERADOR DE QUESTÕES ====================
     function obterQuestoesDaArea(areaId) {
         const topicosPorArea = {
             "cientista-dados": ["Regressão Linear", "Overfitting", "Validação Cruzada", "PCA", "Clusterização", "Redes Neurais", "Árvores de Decisão", "SVM", "Naive Bayes", "Ensemble", "Métricas de Avaliação", "SQL para Análise", "Data Warehouse", "Business Intelligence", "Estatística Descritiva", "Teste de Hipóteses", "Distribuições", "Deep Learning", "CNN", "RNN", "IA Generativa", "LLM", "Geoprocessamento", "LGPD", "Ética em IA", "Data Mining", "Visualização de Dados", "Big Data", "Spark", "ETL"],
@@ -750,13 +770,15 @@
                 `<button class="btn start-simulado" data-area='${JSON.stringify(area)}'><i class="fas fa-play"></i> Simulado</button>` :
                 `<button class="btn btn-disabled" disabled><i class="fas fa-clock"></i> Em breve</button>`;
             const btnStudyMode = area.disponivel ? `<button class="btn study-mode toggle-study-mode" data-area-id="${area.id}" style="background:#6c757d;"><i class="fas fa-graduation-cap"></i> Modo estudo</button>` : '';
+            // Ícone de ajuda (interrogação) para explicar a diferença
+            const helpIcon = `<span class="help-icon" data-help="modoestudo"><i class="fas fa-question"></i></span>`;
             card.innerHTML = `
                 <div class="card-header"><i class="fas fa-${area.icone}"></i><h3>${area.nome}</h3></div>
                 <div class="card-body">
                     <p>30 questões estilo FGV (cada acerto vale 5 pontos)</p>
                     <div class="btn-group">
                         ${btnSimulado}
-                        ${btnStudyMode}
+                        ${btnStudyMode} ${helpIcon}
                     </div>
                     <div class="pdf-destaque"><i class="fas fa-gift"></i> 📘 Acertando 70% você ganha o PDF com 100 questões comentadas da área!</div>
                 </div>
@@ -788,6 +810,12 @@
                 }
             })();
         });
+        // Evento para os ícones de ajuda
+        document.querySelectorAll('.help-icon').forEach(icon => {
+            icon.addEventListener('click', () => {
+                document.getElementById('modoEstudoHelpModal').style.display = 'flex';
+            });
+        });
         return atualizarRanking();
     }
 
@@ -797,6 +825,7 @@
             const tbody = document.getElementById('userTableBody');
             tbody.innerHTML = '';
             usuarios.forEach(u => {
+                const concluido = verificarConclusaoCertificado(u);
                 const row = tbody.insertRow();
                 row.insertCell(0).innerText = u.id;
                 row.insertCell(1).innerHTML = `<input type="text" value="${u.nome}" class="edit-nome" data-id="${u.id}">`;
@@ -806,9 +835,49 @@
                 const dataValue = u.ultimoSimulado ? new Date(u.ultimoSimulado).toISOString().split('T')[0] : '';
                 row.insertCell(5).innerHTML = `<input type="date" value="${dataValue}" class="edit-data" data-id="${u.id}">`;
                 row.insertCell(6).innerHTML = `<input type="number" step="1" min="0" max="100" value="${u.ultimaPontuacao||0}" class="edit-pontuacao" data-id="${u.id}">`;
-                row.insertCell(7).innerHTML = u.certificadoEmitido ? '✅ Emitido' : '❌ Não emitido';
-                const actions = row.insertCell(8);
-                actions.innerHTML = `<button class="save-user" data-id="${u.id}">Salvar</button> <button class="reset-pwd" data-id="${u.id}">Reset Senha</button> <button class="delete-user" data-id="${u.id}">Excluir</button>`;
+                row.insertCell(7).innerHTML = concluido ? '✅ Sim' : '❌ Não';
+                row.insertCell(8).innerHTML = u.certificadoEmitido ? '✅ Emitido' : '❌ Não emitido';
+                const actions = row.insertCell(9);
+                let btnCertificado = '';
+                if (concluido && !u.certificadoEmitido) {
+                    btnCertificado = `<button class="emitir-certificado-test" data-id="${u.id}" data-nome="${u.nome}">Emitir Certificado Teste</button> `;
+                } else if (u.certificadoEmitido) {
+                    btnCertificado = `<button class="ver-certificado-test" data-id="${u.id}">Ver Certificado</button> `;
+                }
+                actions.innerHTML = `${btnCertificado}<button class="save-user" data-id="${u.id}">Salvar</button> <button class="reset-pwd" data-id="${u.id}">Reset Senha</button> <button class="delete-user" data-id="${u.id}">Excluir</button>`;
+            });
+            document.querySelectorAll('.emitir-certificado-test').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const id = parseInt(btn.getAttribute('data-id'));
+                    const nome = btn.getAttribute('data-nome');
+                    const usuario = await db.usuarios.get(id);
+                    if (!verificarConclusaoCertificado(usuario)) {
+                        alert("Usuário não concluiu todos os módulos.");
+                        return;
+                    }
+                    const rg = prompt("Digite o RG para o certificado:", "123456789");
+                    const cpf = prompt("Digite o CPF para o certificado:", "000.000.000-00");
+                    if (!rg || !cpf) return;
+                    const certificado = await emitirCertificado(id, { nome: usuario.nome, rg, cpf });
+                    if (certificado) {
+                        await gerarPDFCertificado(certificado);
+                        renderAdminPanel();
+                        if (currentUser && currentUser.id === id) {
+                            renderDashboard();
+                        }
+                    }
+                });
+            });
+            document.querySelectorAll('.ver-certificado-test').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const id = parseInt(btn.getAttribute('data-id'));
+                    const usuario = await db.usuarios.get(id);
+                    if (usuario && usuario.certificadoDados) {
+                        await gerarPDFCertificado(usuario.certificadoDados);
+                    } else {
+                        alert("Certificado não encontrado.");
+                    }
+                });
             });
             document.querySelectorAll('.save-user').forEach(btn => {
                 btn.addEventListener('click', (e) => {
@@ -866,8 +935,8 @@
     });
     document.getElementById('exportCsvBtn')?.addEventListener('click', () => {
         db.usuarios.toArray().then(usuarios => {
-            const cabecalho = ["Nome", "Email", "Pontos", "Downloads Restantes", "Ultimo Simulado", "Ultima Pontuacao (%)", "Certificado"];
-            const linhas = usuarios.map(u => [u.nome, u.email, u.pontos||0, u.downloadsRestantes, u.ultimoSimulado ? new Date(u.ultimoSimulado).toLocaleDateString() : "", u.ultimaPontuacao||"", u.certificadoEmitido ? "Sim" : "Não"]);
+            const cabecalho = ["Nome", "Email", "Pontos", "Downloads Restantes", "Ultimo Simulado", "Ultima Pontuacao (%)", "Módulos Concluídos", "Certificado"];
+            const linhas = usuarios.map(u => [u.nome, u.email, u.pontos||0, u.downloadsRestantes, u.ultimoSimulado ? new Date(u.ultimoSimulado).toLocaleDateString() : "", u.ultimaPontuacao||"", verificarConclusaoCertificado(u) ? "Sim" : "Não", u.certificadoEmitido ? "Sim" : "Não"]);
             const conteudoCSV = [cabecalho, ...linhas].map(row => row.map(cell => `"${cell}"`).join(",")).join("\n");
             const blob = new Blob(["\uFEFF" + conteudoCSV], { type: "text/csv;charset=utf-8;" });
             const link = document.createElement("a");
@@ -999,7 +1068,7 @@
         document.getElementById('quizModal').style.display = 'none';
     });
 
-    // ==================== SIMULADO (COM CERTIFICADO) ====================
+    // ==================== SIMULADO ====================
     let questoesAtuais = [], respostas = [], indiceAtual = 0, tempoRestante = 600, timerInterval = null, simuladoFinalizado = false, areaAtual = null, modoEstudo = false;
     function salvarProgressoSimulado() {
         if (!simuladoFinalizado && areaAtual && currentUser) {
@@ -1129,7 +1198,6 @@
             const historico = currentUser.historicoPontos || [];
             historico.push({ data: new Date().toISOString(), pontos: currentUser.pontos });
             currentUser.historicoPontos = historico.slice(-7);
-            // Registrar conclusão do simulado (para certificado)
             if (!currentUser.simuladosConcluidos) currentUser.simuladosConcluidos = [];
             if (!currentUser.simuladosConcluidos.includes(areaAtual.id)) {
                 currentUser.simuladosConcluidos.push(areaAtual.id);
@@ -1174,7 +1242,6 @@
                 atualizarRanking();
                 renderBadges(currentUser);
                 atualizarGrafico(currentUser);
-                // Verificar se todos os módulos foram concluídos e mostrar botão de certificado
                 const certificadoBtn = document.getElementById('certificadoBtn');
                 if (verificarConclusaoCertificado() && !currentUser.certificadoEmitido) {
                     certificadoBtn.style.display = 'inline-block';
@@ -1210,53 +1277,6 @@
             showScreen('simulatorScreen');
         });
     }
-
-    // ==================== CERTIFICADO ====================
-    async function solicitarCertificado() {
-        if (!verificarConclusaoCertificado()) {
-            alert("Você ainda não concluiu todos os 6 módulos.");
-            return;
-        }
-        if (currentUser.certificadoEmitido) {
-            const certificado = currentUser.certificadoDados;
-            if (certificado) {
-                await gerarPDFCertificado(certificado);
-            } else {
-                alert("Erro: dados do certificado não encontrados.");
-            }
-            return;
-        }
-        // Mostrar modal para preenchimento dos dados
-        const modal = document.getElementById('certificadoModal');
-        modal.style.display = 'flex';
-        document.getElementById('certNome').value = currentUser.nome;
-        document.getElementById('certRG').value = '';
-        document.getElementById('certCPF').value = '';
-    }
-
-    document.getElementById('gerarCertificadoBtn')?.addEventListener('click', async () => {
-        const nome = document.getElementById('certNome').value.trim();
-        const rg = document.getElementById('certRG').value.trim();
-        const cpf = document.getElementById('certCPF').value.trim();
-        if (!nome || !rg || !cpf) {
-            alert("Preencha todos os campos.");
-            return;
-        }
-        const certificado = await emitirCertificado({ nome, rg, cpf });
-        if (certificado) {
-            document.getElementById('certificadoModal').style.display = 'none';
-            await gerarPDFCertificado(certificado);
-            // Atualiza badges e botão
-            renderBadges(currentUser);
-            const certificadoBtn = document.getElementById('certificadoBtn');
-            certificadoBtn.innerText = '📜 Ver Certificado';
-        } else {
-            alert("Erro ao emitir certificado.");
-        }
-    });
-    document.getElementById('closeCertificadoModal')?.addEventListener('click', () => {
-        document.getElementById('certificadoModal').style.display = 'none';
-    });
 
     // ==================== CONTROLE DE TELAS ====================
     function showScreen(screenId) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(screenId).classList.add('active'); }
@@ -1324,6 +1344,11 @@
         document.getElementById('revisaoModal').style.display = 'none';
     });
 
+    // ==================== MODAL AJUDA MODO ESTUDO ====================
+    document.getElementById('closeModoEstudoHelp')?.addEventListener('click', () => {
+        document.getElementById('modoEstudoHelpModal').style.display = 'none';
+    });
+
     // ==================== BOTÃO MODO ESTUDO NA TELA SIMULADO ====================
     document.getElementById('studyModeToggle')?.addEventListener('click', () => {
         modoEstudo = !modoEstudo;
@@ -1355,6 +1380,50 @@
                 renderAdminQuizzes();
             }
         });
+    });
+
+    // ==================== CERTIFICADO (botão do dashboard) ====================
+    async function solicitarCertificado() {
+        if (!verificarConclusaoCertificado()) {
+            alert("Você ainda não concluiu todos os 6 módulos.");
+            return;
+        }
+        if (currentUser.certificadoEmitido) {
+            const certificado = currentUser.certificadoDados;
+            if (certificado) {
+                await gerarPDFCertificado(certificado);
+            } else {
+                alert("Erro: dados do certificado não encontrados.");
+            }
+            return;
+        }
+        const modal = document.getElementById('certificadoModal');
+        modal.style.display = 'flex';
+        document.getElementById('certNome').value = currentUser.nome;
+        document.getElementById('certRG').value = '';
+        document.getElementById('certCPF').value = '';
+    }
+    document.getElementById('gerarCertificadoBtn')?.addEventListener('click', async () => {
+        const nome = document.getElementById('certNome').value.trim();
+        const rg = document.getElementById('certRG').value.trim();
+        const cpf = document.getElementById('certCPF').value.trim();
+        if (!nome || !rg || !cpf) {
+            alert("Preencha todos os campos.");
+            return;
+        }
+        const certificado = await emitirCertificado(currentUser.id, { nome, rg, cpf });
+        if (certificado) {
+            document.getElementById('certificadoModal').style.display = 'none';
+            await gerarPDFCertificado(certificado);
+            renderBadges(currentUser);
+            const certificadoBtn = document.getElementById('certificadoBtn');
+            certificadoBtn.innerText = '📜 Ver Certificado';
+        } else {
+            alert("Erro ao emitir certificado.");
+        }
+    });
+    document.getElementById('closeCertificadoModal')?.addEventListener('click', () => {
+        document.getElementById('certificadoModal').style.display = 'none';
     });
 
     // ==================== INICIALIZAÇÃO ====================
