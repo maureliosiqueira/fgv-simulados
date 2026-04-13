@@ -6,11 +6,10 @@
     <title>EstudandoTI_Brasil - Simulados FGV para TI</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <!-- Dexie.js (IndexedDB wrapper) -->
+    <script src="https://unpkg.com/dexie@3.2.4/dist/dexie.js"></script>
     <style>
+        /* ========== ESTILOS (mesmos da versão anterior, omitidos por brevidade) ========== */
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0b2b44 0%, #1b5e7a 100%); min-height: 100vh; padding: 1rem; }
         .screen { max-width: 1400px; margin: 0 auto; background: white; border-radius: 2rem; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: none; }
@@ -87,7 +86,7 @@
 </head>
 <body>
 
-<!-- TELA DE LOGIN/CADASTRO -->
+<!-- TELA DE LOGIN/CADASTRO (mesmo conteúdo) -->
 <div id="loginScreen" class="screen active">
     <div class="header">
         <i class="fab fa-youtube fa-4x" style="color:#c0392b;"></i>
@@ -228,34 +227,60 @@
 </div>
 
 <script>
-    // ==================== CONFIGURAÇÃO DO FIREBASE ====================
-    const firebaseConfig = {
-        apiKey: "AIzaSyBfTHfkDvVhfCcxtYPlGeBwk3xijSEJ6Ks",
-        authDomain: "cadastro---fgv-simulados.firebaseapp.com",
-        projectId: "cadastro---fgv-simulados",
-        storageBucket: "cadastro---fgv-simulados.firebasestorage.app",
-        messagingSenderId: "692271311021",
-        appId: "1:692271311021:web:3abdfbe598a685fae7be24",
-        measurementId: "G-X50QZRPH8Q"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
+    // ==================== INDEXEDDB (DEXIE) - PERSISTÊNCIA LOCAL ====================
+    const db = new Dexie("EstudandoTIDB");
+    db.version(1).stores({
+        usuarios: "++id, nome, email, senha, pontos, downloadsRestantes, ultimoSimulado, ultimaPontuacao, isAdmin",
+        progresso: "id, respostas, tempoRestante, indiceAtual"
+    });
+
+    // Inicializa dados padrão (se vazio)
+    db.usuarios.count().then(count => {
+        if (count === 0) {
+            db.usuarios.bulkAdd([
+                { id: 1, nome: "Ana Carolina", email: "ana@teste.com", senha: "123", pontos: 98, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null, isAdmin: false },
+                { id: 2, nome: "Bruno Lima", email: "bruno@teste.com", senha: "123", pontos: 95, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null, isAdmin: false },
+                { id: 3, nome: "Administrador", email: "admin@admin.com", senha: "admin123", pontos: 0, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null, isAdmin: true }
+            ]);
+        }
+    });
 
     // ==================== VARIÁVEIS GLOBAIS ====================
     let currentUser = null;
-    let currentUserUid = null;
 
-    // ==================== FUNÇÕES DE USUÁRIO (FIREBASE) ====================
-    async function atualizarUsuarioNoFirestore(usuarioAtualizado) {
-        if (!currentUserUid) return;
-        await db.collection('usuarios').doc(currentUserUid).update(usuarioAtualizado);
-        currentUser = { ...currentUser, ...usuarioAtualizado };
+    // ==================== FUNÇÕES DE USUÁRIO ====================
+    async function getUsuarios() { return await db.usuarios.toArray(); }
+    async function autenticar(email, senha) {
+        return await db.usuarios.where({ email, senha }).first();
     }
-
-    async function resetarSenhaFirebase(email) {
-        await auth.sendPasswordResetEmail(email);
-        alert("E-mail de redefinição enviado! Verifique sua caixa de entrada.");
+    async function adicionarUsuario(nome, email, senha) {
+        const existente = await db.usuarios.where({ email }).first();
+        if (existente) return false;
+        const usuarios = await getUsuarios();
+        const novoId = usuarios.length ? Math.max(...usuarios.map(u => u.id)) + 1 : 1;
+        await db.usuarios.add({
+            id: novoId, nome, email, senha, pontos: 0, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null, isAdmin: false
+        });
+        return true;
+    }
+    async function atualizarUsuario(usuarioAtualizado) {
+        await db.usuarios.update(usuarioAtualizado.id, usuarioAtualizado);
+        if (currentUser && currentUser.id === usuarioAtualizado.id) currentUser = usuarioAtualizado;
+    }
+    async function excluirUsuario(id) {
+        await db.usuarios.delete(id);
+    }
+    async function resetarSenha(id, novaSenha = "123") {
+        await db.usuarios.update(id, { senha: novaSenha });
+        alert(`Senha redefinida para ${novaSenha}`);
+    }
+    async function alterarMinhaSenha(senhaAtual, novaSenha) {
+        if (currentUser.senha !== senhaAtual) { alert("Senha atual incorreta."); return false; }
+        if (novaSenha.length < 3) { alert("A nova senha deve ter pelo menos 3 caracteres."); return false; }
+        currentUser.senha = novaSenha;
+        await atualizarUsuario(currentUser);
+        alert("Senha alterada com sucesso!");
+        return true;
     }
 
     // ==================== GERADOR DE QUESTÕES (SEM DICAS) ====================
@@ -338,13 +363,13 @@
         { id: "analista-ux", nome: "Analista de UX", icone: "palette", pdf: "ebook-UX.pdf" }
     ];
 
-    // ==================== RANKING (FIREBASE) ====================
+    // ==================== RANKING ====================
     async function atualizarRanking() {
-        const snapshot = await db.collection('usuarios').orderBy('pontos', 'desc').limit(10).get();
-        const usuarios = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const usuarios = await db.usuarios.toArray();
+        usuarios.sort((a,b) => (b.pontos || 0) - (a.pontos || 0));
         const rankingList = document.getElementById('rankingList');
         if (rankingList) {
-            rankingList.innerHTML = usuarios.map(u => {
+            rankingList.innerHTML = usuarios.slice(0,10).map(u => {
                 let dataInfo = '';
                 if (u.ultimoSimulado) {
                     const data = new Date(u.ultimoSimulado);
@@ -356,7 +381,7 @@
     }
 
     // ==================== DASHBOARD ====================
-    function renderDashboard() {
+    async function renderDashboard() {
         document.getElementById('userNameDisplay').innerText = `Olá, ${currentUser.nome}`;
         const adminBtn = document.getElementById('adminPanelBtn');
         if (currentUser.isAdmin) adminBtn.style.display = 'inline-block';
@@ -384,13 +409,12 @@
                 iniciarSimulado(area);
             });
         });
-        atualizarRanking();
+        await atualizarRanking();
     }
 
-    // ==================== ADMIN CRUD (FIREBASE) ====================
+    // ==================== ADMIN CRUD ====================
     async function renderAdminPanel() {
-        const snapshot = await db.collection('usuarios').get();
-        const usuarios = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const usuarios = await db.usuarios.toArray();
         const tbody = document.getElementById('userTableBody');
         tbody.innerHTML = '';
         usuarios.forEach(u => {
@@ -408,42 +432,39 @@
         });
         document.querySelectorAll('.save-user').forEach(btn => {
             btn.addEventListener('click', async (e) => {
-                const id = btn.getAttribute('data-id');
+                const id = parseInt(btn.getAttribute('data-id'));
                 const nome = document.querySelector(`.edit-nome[data-id="${id}"]`).value;
                 const email = document.querySelector(`.edit-email[data-id="${id}"]`).value;
                 const pontos = parseInt(document.querySelector(`.edit-pontos[data-id="${id}"]`).value);
                 const downloads = parseInt(document.querySelector(`.edit-downloads[data-id="${id}"]`).value);
                 const dataStr = document.querySelector(`.edit-data[data-id="${id}"]`).value;
                 const pontuacao = parseInt(document.querySelector(`.edit-pontuacao[data-id="${id}"]`).value);
-                await db.collection('usuarios').doc(id).update({
+                await db.usuarios.update(id, {
                     nome, email, pontos, downloadsRestantes: downloads,
                     ultimoSimulado: dataStr ? new Date(dataStr).toISOString() : null,
                     ultimaPontuacao: isNaN(pontuacao) ? 0 : pontuacao
                 });
-                if (currentUserUid === id) {
+                if (currentUser.id === id) {
                     currentUser = { ...currentUser, nome, email, pontos, downloadsRestantes: downloads, ultimoSimulado: dataStr ? new Date(dataStr).toISOString() : null, ultimaPontuacao: pontuacao };
                 }
-                renderAdminPanel();
-                atualizarRanking();
+                await renderAdminPanel();
+                await atualizarRanking();
             });
         });
         document.querySelectorAll('.reset-pwd').forEach(btn => {
             btn.addEventListener('click', async (e) => {
-                const id = btn.getAttribute('data-id');
-                const userDoc = await db.collection('usuarios').doc(id).get();
-                const email = userDoc.data().email;
-                if (email) await resetarSenhaFirebase(email);
-                else alert("E-mail não encontrado.");
+                const id = parseInt(btn.getAttribute('data-id'));
+                await resetarSenha(id, "123");
             });
         });
         document.querySelectorAll('.delete-user').forEach(btn => {
             btn.addEventListener('click', async (e) => {
-                const id = btn.getAttribute('data-id');
-                if (id === currentUserUid) { alert("Não é possível excluir a si mesmo."); return; }
+                const id = parseInt(btn.getAttribute('data-id'));
+                if (id === currentUser.id) { alert("Não é possível excluir a si mesmo."); return; }
                 if (confirm("Excluir usuário?")) {
-                    await db.collection('usuarios').doc(id).delete();
-                    renderAdminPanel();
-                    atualizarRanking();
+                    await excluirUsuario(id);
+                    await renderAdminPanel();
+                    await atualizarRanking();
                 }
             });
         });
@@ -452,19 +473,14 @@
     document.getElementById('addUserBtn')?.addEventListener('click', async () => {
         const nome = prompt("Nome:"); const email = prompt("E-mail:"); const senha = prompt("Senha:");
         if (nome && email && senha) {
-            try {
-                const cred = await auth.createUserWithEmailAndPassword(email, senha);
-                await db.collection('usuarios').doc(cred.user.uid).set({
-                    nome, email, pontos: 0, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null, isAdmin: false
-                });
-                renderAdminPanel();
-                atualizarRanking();
-            } catch (error) { alert("Erro ao criar usuário: " + error.message); }
+            if (await adicionarUsuario(nome, email, senha)) {
+                await renderAdminPanel();
+                await atualizarRanking();
+            } else alert("E-mail já existe.");
         }
     });
     document.getElementById('exportCsvBtn')?.addEventListener('click', async () => {
-        const snapshot = await db.collection('usuarios').get();
-        const usuarios = snapshot.docs.map(doc => doc.data());
+        const usuarios = await db.usuarios.toArray();
         const cabecalho = ["Nome", "Email", "Pontos", "Downloads Restantes", "Ultimo Simulado", "Ultima Pontuacao (%)"];
         const linhas = usuarios.map(u => [u.nome, u.email, u.pontos||0, u.downloadsRestantes, u.ultimoSimulado ? new Date(u.ultimoSimulado).toLocaleDateString() : "", u.ultimaPontuacao||""]);
         const conteudoCSV = [cabecalho, ...linhas].map(row => row.map(cell => `"${cell}"`).join(",")).join("\n");
@@ -475,31 +491,31 @@
         document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url);
     });
     document.getElementById('gerarDadosExemploBtn')?.addEventListener('click', async () => {
-        const snapshot = await db.collection('usuarios').get();
+        const usuarios = await db.usuarios.toArray();
         const hoje = new Date();
-        for (const doc of snapshot.docs) {
-            const u = doc.data();
+        for (const u of usuarios) {
             if (u.isAdmin) continue;
             const diasAtras = Math.floor(Math.random() * 30);
             const dataSimulado = new Date(hoje); dataSimulado.setDate(hoje.getDate() - diasAtras);
             const pontuacaoPercentual = Math.floor(Math.random() * 101);
             const novosPontos = Math.floor(pontuacaoPercentual * 1.5);
-            await db.collection('usuarios').doc(doc.id).update({
+            await db.usuarios.update(u.id, {
                 ultimoSimulado: dataSimulado.toISOString(),
                 ultimaPontuacao: pontuacaoPercentual,
                 pontos: novosPontos
             });
         }
-        renderAdminPanel();
-        atualizarRanking();
+        await renderAdminPanel();
+        await atualizarRanking();
         alert("Dados de exemplo gerados!");
     });
 
-    // ==================== SIMULADO (FIREBASE) ====================
+    // ==================== SIMULADO ====================
     let questoesAtuais = [], respostas = [], indiceAtual = 0, tempoRestante = 600, timerInterval = null, simuladoFinalizado = false, areaAtual = null;
     async function salvarProgressoSimulado() {
-        if (!simuladoFinalizado && areaAtual && currentUserUid) {
-            await db.collection('progresso').doc(`${currentUserUid}_${areaAtual.id}`).set({
+        if (!simuladoFinalizado && areaAtual && currentUser) {
+            await db.progresso.put({
+                id: `${currentUser.id}_${areaAtual.id}`,
                 respostas: respostas,
                 tempoRestante: tempoRestante,
                 indiceAtual: indiceAtual
@@ -507,12 +523,11 @@
         }
     }
     async function carregarProgressoSimulado() {
-        const docRef = await db.collection('progresso').doc(`${currentUserUid}_${areaAtual.id}`).get();
-        if (docRef.exists) {
-            const data = docRef.data();
-            respostas = data.respostas || new Array(questoesAtuais.length).fill(null);
-            tempoRestante = data.tempoRestante ?? 600;
-            indiceAtual = data.indiceAtual ?? 0;
+        const saved = await db.progresso.get(`${currentUser.id}_${areaAtual.id}`);
+        if (saved) {
+            respostas = saved.respostas || new Array(questoesAtuais.length).fill(null);
+            tempoRestante = saved.tempoRestante ?? 600;
+            indiceAtual = saved.indiceAtual ?? 0;
         } else {
             respostas = new Array(questoesAtuais.length).fill(null);
         }
@@ -560,15 +575,10 @@
         const percentual = (acertos / questoesAtuais.length) * 100;
         const pontosGanhos = acertos * 5;
         if (pontosGanhos > 0) {
-            const novosPontos = (currentUser.pontos || 0) + pontosGanhos;
-            await atualizarUsuarioNoFirestore({
-                pontos: novosPontos,
-                ultimoSimulado: new Date().toISOString(),
-                ultimaPontuacao: percentual.toFixed(1)
-            });
-            currentUser.pontos = novosPontos;
+            currentUser.pontos += pontosGanhos;
             currentUser.ultimoSimulado = new Date().toISOString();
             currentUser.ultimaPontuacao = percentual.toFixed(1);
+            await atualizarUsuario(currentUser);
         }
         const resultsDiv = document.getElementById('resultsPanel');
         resultsDiv.style.display = 'block';
@@ -585,18 +595,17 @@
             const downloadBtn = document.getElementById('downloadPdfBtn');
             if (downloadBtn) downloadBtn.addEventListener('click', async () => {
                 if (currentUser.downloadsRestantes > 0) {
-                    const novosDownloads = currentUser.downloadsRestantes - 1;
-                    await atualizarUsuarioNoFirestore({ downloadsRestantes: novosDownloads });
-                    currentUser.downloadsRestantes = novosDownloads;
-                    alert(`Download liberado! Restam ${novosDownloads} downloads.`);
+                    currentUser.downloadsRestantes--;
+                    await atualizarUsuario(currentUser);
+                    alert(`Download liberado! Restam ${currentUser.downloadsRestantes} downloads.`);
                     window.open(areaAtual.pdf, '_blank');
                     downloadBtn.disabled = true; downloadBtn.style.opacity = '0.5';
                 } else alert("Sem downloads disponíveis.");
             });
         }
         document.getElementById('submitBtn').disabled = true; document.getElementById('submitBtn').style.opacity = '0.6';
-        await db.collection('progresso').doc(`${currentUserUid}_${areaAtual.id}`).delete();
-        atualizarRanking();
+        await db.progresso.delete(`${currentUser.id}_${areaAtual.id}`);
+        await atualizarRanking();
     }
     async function iniciarSimulado(area) {
         areaAtual = area;
@@ -604,8 +613,8 @@
         questoesAtuais = questoesBase.map(q => shuffleOptions(q));
         await carregarProgressoSimulado();
         simuladoFinalizado = false;
-        const docExists = await db.collection('progresso').doc(`${currentUserUid}_${areaAtual.id}`).get();
-        if (!docExists.exists) tempoRestante = 600;
+        const saved = await db.progresso.get(`${currentUser.id}_${areaAtual.id}`);
+        if (!saved) tempoRestante = 600;
         atualizarTimerUI();
         if (timerInterval) clearInterval(timerInterval);
         iniciarTimer();
@@ -624,13 +633,17 @@
     // ==================== CONTROLE DE TELAS ====================
     function showScreen(screenId) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(screenId).classList.add('active'); }
 
-    // ==================== LOGIN E CADASTRO (FIREBASE) ====================
+    // ==================== LOGIN ====================
     async function fazerLogin() {
         const email = document.getElementById('loginEmail').value.trim();
         const senha = document.getElementById('loginSenha').value;
-        try {
-            await auth.signInWithEmailAndPassword(email, senha);
-        } catch (error) {
+        const user = await autenticar(email, senha);
+        if (user) {
+            currentUser = user;
+            localStorage.setItem('usuarioLogado', JSON.stringify({ id: user.id, nome: user.nome, email: user.email, pontos: user.pontos, downloadsRestantes: user.downloadsRestantes }));
+            await renderDashboard();
+            showScreen('dashboardScreen');
+        } else {
             document.getElementById('authMsg').innerText = 'E-mail ou senha inválidos.';
         }
     }
@@ -642,66 +655,20 @@
             document.getElementById('regMsg').innerText = 'Preencha todos os campos.';
             return;
         }
-        try {
-            const cred = await auth.createUserWithEmailAndPassword(email, senha);
-            await db.collection('usuarios').doc(cred.user.uid).set({
-                nome, email, pontos: 0, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null, isAdmin: false
-            });
+        if (await adicionarUsuario(nome, email, senha)) {
             document.getElementById('regMsg').innerText = 'Cadastro realizado! Faça login.';
             setTimeout(() => {
                 document.getElementById('loginSection').style.display = 'block';
                 document.getElementById('registerSection').style.display = 'none';
             }, 1500);
-        } catch (error) {
-            document.getElementById('regMsg').innerText = error.message;
+        } else {
+            document.getElementById('regMsg').innerText = 'E-mail já existe.';
         }
     }
-    async function logout() {
-        await auth.signOut();
+    function logout() {
+        localStorage.removeItem('usuarioLogado');
         location.reload();
     }
-
-    // ==================== ALTERAR SENHA (FIREBASE) ====================
-    async function alterarMinhaSenha(senhaAtual, novaSenha) {
-        const user = auth.currentUser;
-        const credential = firebase.auth.EmailAuthProvider.credential(user.email, senhaAtual);
-        try {
-            await user.reauthenticateWithCredential(credential);
-            await user.updatePassword(novaSenha);
-            alert("Senha alterada com sucesso!");
-            return true;
-        } catch (error) {
-            alert("Senha atual incorreta ou erro: " + error.message);
-            return false;
-        }
-    }
-
-    // ==================== LISTENER DE AUTENTICAÇÃO ====================
-    auth.onAuthStateChanged(async (user) => {
-        if (user) {
-            currentUserUid = user.uid;
-            const doc = await db.collection('usuarios').doc(user.uid).get();
-            if (doc.exists) {
-                currentUser = { uid: user.uid, ...doc.data() };
-            } else {
-                const novoUsuario = {
-                    nome: user.email.split('@')[0],
-                    email: user.email,
-                    pontos: 0,
-                    downloadsRestantes: 3,
-                    ultimoSimulado: null,
-                    ultimaPontuacao: null,
-                    isAdmin: false
-                };
-                await db.collection('usuarios').doc(user.uid).set(novoUsuario);
-                currentUser = { uid: user.uid, ...novoUsuario };
-            }
-            renderDashboard();
-            showScreen('dashboardScreen');
-        } else {
-            showScreen('loginScreen');
-        }
-    });
 
     // ==================== MODAL ALTERAR SENHA ====================
     const modal = document.getElementById('changePwdModal');
@@ -720,7 +687,22 @@
         }
     });
 
-    // ==================== EVENTOS GLOBAIS ====================
+    // ==================== INICIALIZAÇÃO ====================
+    const savedUser = localStorage.getItem('usuarioLogado');
+    if (savedUser) {
+        const data = JSON.parse(savedUser);
+        const user = await db.usuarios.get(data.id);
+        if (user && user.ativo !== false) {
+            currentUser = user;
+            await renderDashboard();
+            showScreen('dashboardScreen');
+        } else {
+            showScreen('loginScreen');
+        }
+    } else {
+        showScreen('loginScreen');
+    }
+
     document.getElementById('loginBtn').addEventListener('click', fazerLogin);
     document.getElementById('registerBtn').addEventListener('click', fazerCadastro);
     document.getElementById('showRegister').addEventListener('click', () => {
@@ -732,8 +714,8 @@
         document.getElementById('registerSection').style.display = 'none';
     });
     document.getElementById('logoutBtn').addEventListener('click', logout);
-    document.getElementById('adminPanelBtn').addEventListener('click', () => {
-        renderAdminPanel();
+    document.getElementById('adminPanelBtn').addEventListener('click', async () => {
+        await renderAdminPanel();
         showScreen('adminScreen');
     });
     document.getElementById('backFromAdmin').addEventListener('click', () => showScreen('dashboardScreen'));
