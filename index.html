@@ -9,7 +9,6 @@
     <script src="https://unpkg.com/dexie@3.2.4/dist/dexie.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
-        /* ========== ESTILOS (mesmos das versões anteriores, com acréscimos para admin de quizzes) ========== */
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0b2b44 0%, #1b5e7a 100%); min-height: 100vh; padding: 1rem; }
         .screen { max-width: 1400px; margin: 0 auto; background: white; border-radius: 2rem; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: none; }
@@ -116,7 +115,7 @@
 </head>
 <body>
 
-<!-- TELA DE LOGIN/CADASTRO (mesma das versões anteriores) -->
+<!-- TELA DE LOGIN/CADASTRO -->
 <div id="loginScreen" class="screen active">
     <div class="header">
         <i class="fab fa-youtube fa-4x" style="color:#c0392b;"></i>
@@ -189,7 +188,7 @@
     </div>
 </div>
 
-<!-- TELA ADMIN (CRUD de usuários + Gerenciamento de Quizzes) -->
+<!-- TELA ADMIN (CRUD de usuários + Quizzes) -->
 <div id="adminScreen" class="screen">
     <div class="dashboard-header">
         <div><i class="fas fa-users-cog"></i> Painel de Controle - Admin</div>
@@ -232,32 +231,7 @@
     </div>
 </div>
 
-<!-- Modal para edição/criação de Quiz -->
-<div id="quizModal" class="modal">
-    <div class="modal-content">
-        <h3 id="quizModalTitle">Adicionar Quiz</h3>
-        <input type="date" id="quizData" placeholder="Data (AAAA-MM-DD)">
-        <input type="text" id="quizPergunta" placeholder="Pergunta">
-        <input type="text" id="quizAlt0" placeholder="Alternativa A">
-        <input type="text" id="quizAlt1" placeholder="Alternativa B">
-        <input type="text" id="quizAlt2" placeholder="Alternativa C">
-        <input type="text" id="quizAlt3" placeholder="Alternativa D">
-        <select id="quizCorreta">
-            <option value="0">Alternativa A</option>
-            <option value="1">Alternativa B</option>
-            <option value="2">Alternativa C</option>
-            <option value="3">Alternativa D</option>
-        </select>
-        <textarea id="quizExplicacao" rows="3" placeholder="Explicação da resposta correta"></textarea>
-        <label><input type="checkbox" id="quizAtivo" checked> Ativo</label>
-        <div>
-            <button id="salvarQuizBtn" class="btn">Salvar</button>
-            <button id="cancelarQuizBtn" class="btn btn-secondary">Cancelar</button>
-        </div>
-    </div>
-</div>
-
-<!-- TELA SIMULADO (idêntica à versão anterior) -->
+<!-- TELA SIMULADO -->
 <div id="simulatorScreen" class="screen">
     <div style="padding: 1rem 1rem 0 1rem;">
         <button id="backToDashboard" class="btn back-btn"><i class="fas fa-arrow-left"></i> Voltar</button>
@@ -302,6 +276,31 @@
     </div>
 </div>
 
+<!-- Modal para edição/criação de Quiz -->
+<div id="quizModal" class="modal">
+    <div class="modal-content">
+        <h3 id="quizModalTitle">Adicionar Quiz</h3>
+        <input type="date" id="quizData" placeholder="Data (AAAA-MM-DD)">
+        <input type="text" id="quizPergunta" placeholder="Pergunta">
+        <input type="text" id="quizAlt0" placeholder="Alternativa A">
+        <input type="text" id="quizAlt1" placeholder="Alternativa B">
+        <input type="text" id="quizAlt2" placeholder="Alternativa C">
+        <input type="text" id="quizAlt3" placeholder="Alternativa D">
+        <select id="quizCorreta">
+            <option value="0">Alternativa A</option>
+            <option value="1">Alternativa B</option>
+            <option value="2">Alternativa C</option>
+            <option value="3">Alternativa D</option>
+        </select>
+        <textarea id="quizExplicacao" rows="3" placeholder="Explicação da resposta correta"></textarea>
+        <label><input type="checkbox" id="quizAtivo" checked> Ativo</label>
+        <div>
+            <button id="salvarQuizBtn" class="btn">Salvar</button>
+            <button id="cancelarQuizBtn" class="btn btn-secondary">Cancelar</button>
+        </div>
+    </div>
+</div>
+
 <!-- Modal alterar senha -->
 <div id="changePwdModal" class="modal">
     <div class="modal-content">
@@ -315,7 +314,7 @@
 </div>
 
 <script>
-    // ==================== INDEXEDDB (DEXIE) COM UPGRADE PARA QUIZZES (mais exemplos) ====================
+    // ==================== INDEXEDDB (DEXIE) ====================
     const db = new Dexie("EstudandoTIDB");
     db.version(1).stores({
         usuarios: "++id, nome, email, senha, pontos, downloadsRestantes, ultimoSimulado, ultimaPontuacao, isAdmin, badges, historicoPontos",
@@ -330,16 +329,12 @@
             if (count === 0) {
                 const hoje = new Date();
                 const quizzesExemplo = [
-                    { data: new Date().toISOString().slice(0,10), pergunta: "Qual das seguintes é uma característica do NoSQL?", alternativas: ["Esquema fixo", "ACID estrito", "Escalabilidade horizontal", "Junções complexas"], correta: 2, explicacao: "NoSQL é conhecido por escalabilidade horizontal, flexibilidade de esquema e alta performance para grandes volumes.", ativo: true },
-                    { data: new Date(Date.now() + 86400000).toISOString().slice(0,10), pergunta: "O que significa a sigla LGPD?", alternativas: ["Lei Geral de Proteção de Dados", "Lei de Gestão de Projetos Digitais", "Lei de Governança Pública", "Lei de Dados Gerais"], correta: 0, explicacao: "LGPD é a Lei Geral de Proteção de Dados, que regulamenta o tratamento de dados pessoais no Brasil.", ativo: true },
-                    { data: new Date(Date.now() + 2*86400000).toISOString().slice(0,10), pergunta: "Em Kubernetes, qual recurso gerencia a réplica de Pods?", alternativas: ["Service", "Deployment", "ConfigMap", "Ingress"], correta: 1, explicacao: "Deployment é o recurso que gerencia réplicas de Pods, permitindo rollout e rollback.", ativo: true },
-                    { data: new Date(Date.now() + 3*86400000).toISOString().slice(0,10), pergunta: "Qual comando SQL é usado para remover uma tabela?", alternativas: ["DELETE", "DROP", "TRUNCATE", "REMOVE"], correta: 1, explicacao: "DROP TABLE remove a tabela e sua estrutura. DELETE remove linhas, mas mantém a tabela.", ativo: true },
-                    { data: new Date(Date.now() + 4*86400000).toISOString().slice(0,10), pergunta: "O que é um Data Warehouse?", alternativas: ["Repositório de dados brutos", "Sistema otimizado para consultas analíticas", "Banco de dados transacional", "Ferramenta de ETL"], correta: 1, explicacao: "Data Warehouse é um sistema otimizado para consultas e análises de dados históricos.", ativo: true },
-                    { data: new Date(Date.now() + 5*86400000).toISOString().slice(0,10), pergunta: "O que mede o F1-Score?", alternativas: ["Média harmônica entre precisão e recall", "Apenas precisão", "Apenas recall", "Acurácia balanceada"], correta: 0, explicacao: "F1-Score é a média harmônica entre precisão e recall, usada para avaliar classificadores em dados desbalanceados.", ativo: true },
-                    { data: new Date(Date.now() + 6*86400000).toISOString().slice(0,10), pergunta: "Qual é a função da camada softmax em redes neurais?", alternativas: ["Normalizar saídas em probabilidades", "Ativação ReLU", "Pooling", "Dropout"], correta: 0, explicacao: "Softmax converte os logits em probabilidades que somam 1, útil para classificação multiclasse.", ativo: true },
-                    { data: new Date(Date.now() + 7*86400000).toISOString().slice(0,10), pergunta: "O que é um Webhook?", alternativas: ["Callback HTTP", "API REST", "WebSocket", "Fila de mensagens"], correta: 0, explicacao: "Webhook é um mecanismo onde um sistema envia uma requisição HTTP para outro quando ocorre um evento.", ativo: true },
-                    { data: new Date(Date.now() + 8*86400000).toISOString().slice(0,10), pergunta: "O que é o padrão SOLID?", alternativas: ["Conjunto de princípios de orientação a objetos", "Framework front-end", "Metodologia ágil", "Padrão de projeto"], correta: 0, explicacao: "SOLID são cinco princípios de design de software para criar código mais manutenível.", ativo: true },
-                    { data: new Date(Date.now() + 9*86400000).toISOString().slice(0,10), pergunta: "O que significa CI/CD?", alternativas: ["Continuous Integration/Continuous Deployment", "Central Intelligence/Control Data", "Code Integration/Code Delivery", "Continuous Interface/Continuous Design"], correta: 0, explicacao: "CI/CD refere-se à integração contínua e entrega contínua, práticas de automação no desenvolvimento de software.", ativo: true }
+                    { data: new Date().toISOString().slice(0,10), pergunta: "Qual das seguintes é uma característica do NoSQL?", alternativas: ["Esquema fixo", "ACID estrito", "Escalabilidade horizontal", "Junções complexas"], correta: 2, explicacao: "NoSQL é conhecido por escalabilidade horizontal, flexibilidade de esquema e alta performance.", ativo: true },
+                    { data: new Date(Date.now() + 86400000).toISOString().slice(0,10), pergunta: "O que significa a sigla LGPD?", alternativas: ["Lei Geral de Proteção de Dados", "Lei de Gestão de Projetos Digitais", "Lei de Governança Pública", "Lei de Dados Gerais"], correta: 0, explicacao: "LGPD é a Lei Geral de Proteção de Dados.", ativo: true },
+                    { data: new Date(Date.now() + 2*86400000).toISOString().slice(0,10), pergunta: "Em Kubernetes, qual recurso gerencia a réplica de Pods?", alternativas: ["Service", "Deployment", "ConfigMap", "Ingress"], correta: 1, explicacao: "Deployment gerencia réplicas de Pods.", ativo: true },
+                    { data: new Date(Date.now() + 3*86400000).toISOString().slice(0,10), pergunta: "Qual comando SQL remove uma tabela?", alternativas: ["DELETE", "DROP", "TRUNCATE", "REMOVE"], correta: 1, explicacao: "DROP TABLE remove a tabela e sua estrutura.", ativo: true },
+                    { data: new Date(Date.now() + 4*86400000).toISOString().slice(0,10), pergunta: "O que é um Data Warehouse?", alternativas: ["Repositório de dados brutos", "Sistema para consultas analíticas", "Banco transacional", "Ferramenta ETL"], correta: 1, explicacao: "Data Warehouse é otimizado para análises.", ativo: true },
+                    { data: new Date(Date.now() + 5*86400000).toISOString().slice(0,10), pergunta: "O que mede o F1-Score?", alternativas: ["Média harmônica entre precisão e recall", "Apenas precisão", "Apenas recall", "Acurácia"], correta: 0, explicacao: "F1-Score é a média harmônica.", ativo: true }
                 ];
                 tx.table('quizzes').bulkAdd(quizzesExemplo);
             }
@@ -441,9 +436,9 @@
         });
     }
 
-    // ==================== QUIZ DIÁRIO ====================
+    // ==================== QUIZ DIÁRIO (CORRIGIDO: DATA LOCAL) ====================
     async function obterQuizDoDia() {
-        const hoje = new Date().toISOString().slice(0,10);
+        const hoje = new Date().toLocaleDateString('en-CA'); // formato YYYY-MM-DD local
         return await db.quizzes.where({ data: hoje, ativo: true }).first();
     }
     async function usuarioJaRespondeuQuiz(usuarioId, quizId) {
@@ -502,7 +497,7 @@
         });
     }
 
-    // ==================== ÁREAS (COM NOVAS DISCIPLINAS "EM BREVE") ====================
+    // ==================== ÁREAS ====================
     const areas = [
         { id: "cientista-dados", nome: "Cientista de Dados", icone: "brain", pdf: "ebook-cientista-dados.pdf", disponivel: true },
         { id: "engenheiro-dados", nome: "Engenheiro de Dados", icone: "database", pdf: "ebook-Engenheiro-Dados.pdf", disponivel: true },
@@ -516,7 +511,7 @@
         { id: "ingles-tecnico", nome: "Inglês Técnico", icone: "language", pdf: null, disponivel: false }
     ];
 
-    // ==================== GERADOR DE QUESTÕES (idêntico à versão anterior) ====================
+    // ==================== GERADOR DE QUESTÕES ====================
     function obterQuestoesDaArea(areaId) {
         const topicosPorArea = {
             "cientista-dados": ["Regressão Linear", "Overfitting", "Validação Cruzada", "PCA", "Clusterização", "Redes Neurais", "Árvores de Decisão", "SVM", "Naive Bayes", "Ensemble", "Métricas de Avaliação", "SQL para Análise", "Data Warehouse", "Business Intelligence", "Estatística Descritiva", "Teste de Hipóteses", "Distribuições", "Deep Learning", "CNN", "RNN", "IA Generativa", "LLM", "Geoprocessamento", "LGPD", "Ética em IA", "Data Mining", "Visualização de Dados", "Big Data", "Spark", "ETL"],
