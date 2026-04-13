@@ -6,10 +6,8 @@
     <title>EstudandoTI_Brasil - Simulados FGV para TI</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Dexie.js -->
     <script src="https://unpkg.com/dexie@3.2.4/dist/dexie.js"></script>
     <style>
-        /* ========== ESTILOS (idênticos à versão anterior) ========== */
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0b2b44 0%, #1b5e7a 100%); min-height: 100vh; padding: 1rem; }
         .screen { max-width: 1400px; margin: 0 auto; background: white; border-radius: 2rem; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: none; }
@@ -227,63 +225,55 @@
 </div>
 
 <script>
-    // ==================== CONFIGURAÇÃO INDEXEDDB (DEXIE) ====================
+    // ==================== INDEXEDDB (DEXIE) ====================
     const db = new Dexie("EstudandoTIDB");
     db.version(1).stores({
         usuarios: "++id, nome, email, senha, pontos, downloadsRestantes, ultimoSimulado, ultimaPontuacao, isAdmin",
         progresso: "&id, respostas, tempoRestante, indiceAtual"
     });
 
-    // Função para inicializar dados padrão (executada uma vez)
-    async function inicializarDadosPadrao() {
-        const count = await db.usuarios.count();
-        if (count === 0) {
-            await db.usuarios.bulkAdd([
-                { nome: "Ana Carolina", email: "ana@teste.com", senha: "123", pontos: 98, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null, isAdmin: false },
-                { nome: "Bruno Lima", email: "bruno@teste.com", senha: "123", pontos: 95, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null, isAdmin: false },
-                { nome: "Administrador", email: "admin@admin.com", senha: "admin123", pontos: 0, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null, isAdmin: true }
-            ]);
-            console.log("Dados padrão inseridos no IndexedDB");
-        }
+    // Dados padrão
+    function inicializarDadosPadrao() {
+        return db.usuarios.count().then(count => {
+            if (count === 0) {
+                return db.usuarios.bulkAdd([
+                    { nome: "Ana Carolina", email: "ana@teste.com", senha: "123", pontos: 98, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null, isAdmin: false },
+                    { nome: "Bruno Lima", email: "bruno@teste.com", senha: "123", pontos: 95, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null, isAdmin: false },
+                    { nome: "Administrador", email: "admin@admin.com", senha: "admin123", pontos: 0, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null, isAdmin: true }
+                ]);
+            }
+        });
     }
 
-    // ==================== VARIÁVEIS GLOBAIS ====================
     let currentUser = null;
 
-    // ==================== FUNÇÕES DE USUÁRIO ====================
-    async function getUsuarios() { return await db.usuarios.toArray(); }
-    async function autenticar(email, senha) {
-        return await db.usuarios.where({ email, senha }).first();
+    // Funções CRUD
+    function autenticar(email, senha) {
+        return db.usuarios.where({ email, senha }).first();
     }
-    async function adicionarUsuario(nome, email, senha) {
-        const existente = await db.usuarios.where({ email }).first();
-        if (existente) return false;
-        await db.usuarios.add({
-            nome, email, senha, pontos: 0, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null, isAdmin: false
+    function adicionarUsuario(nome, email, senha) {
+        return db.usuarios.where({ email }).first().then(existente => {
+            if (existente) return false;
+            return db.usuarios.add({ nome, email, senha, pontos: 0, downloadsRestantes: 3, ultimoSimulado: null, ultimaPontuacao: null, isAdmin: false }).then(() => true);
         });
-        return true;
     }
-    async function atualizarUsuario(usuarioAtualizado) {
-        await db.usuarios.update(usuarioAtualizado.id, usuarioAtualizado);
-        if (currentUser && currentUser.id === usuarioAtualizado.id) currentUser = usuarioAtualizado;
+    function atualizarUsuario(usuarioAtualizado) {
+        return db.usuarios.update(usuarioAtualizado.id, usuarioAtualizado).then(() => {
+            if (currentUser && currentUser.id === usuarioAtualizado.id) currentUser = usuarioAtualizado;
+        });
     }
-    async function excluirUsuario(id) {
-        await db.usuarios.delete(id);
+    function excluirUsuario(id) { return db.usuarios.delete(id); }
+    function resetarSenha(id, novaSenha = "123") {
+        return db.usuarios.update(id, { senha: novaSenha }).then(() => alert(`Senha redefinida para ${novaSenha}`));
     }
-    async function resetarSenha(id, novaSenha = "123") {
-        await db.usuarios.update(id, { senha: novaSenha });
-        alert(`Senha redefinida para ${novaSenha}`);
-    }
-    async function alterarMinhaSenha(senhaAtual, novaSenha) {
-        if (currentUser.senha !== senhaAtual) { alert("Senha atual incorreta."); return false; }
-        if (novaSenha.length < 3) { alert("A nova senha deve ter pelo menos 3 caracteres."); return false; }
+    function alterarMinhaSenha(senhaAtual, novaSenha) {
+        if (currentUser.senha !== senhaAtual) { alert("Senha atual incorreta."); return Promise.resolve(false); }
+        if (novaSenha.length < 3) { alert("A nova senha deve ter pelo menos 3 caracteres."); return Promise.resolve(false); }
         currentUser.senha = novaSenha;
-        await atualizarUsuario(currentUser);
-        alert("Senha alterada com sucesso!");
-        return true;
+        return atualizarUsuario(currentUser).then(() => { alert("Senha alterada com sucesso!"); return true; });
     }
 
-    // ==================== GERADOR DE QUESTÕES (igual anterior) ====================
+    // ==================== GERADOR DE QUESTÕES ====================
     function obterQuestoesDaArea(areaId) {
         const topicosPorArea = {
             "cientista-dados": ["Regressão Linear", "Overfitting", "Validação Cruzada", "PCA", "Clusterização", "Redes Neurais", "Árvores de Decisão", "SVM", "Naive Bayes", "Ensemble", "Métricas de Avaliação", "SQL para Análise", "Data Warehouse", "Business Intelligence", "Estatística Descritiva", "Teste de Hipóteses", "Distribuições", "Deep Learning", "CNN", "RNN", "IA Generativa", "LLM", "Geoprocessamento", "LGPD", "Ética em IA", "Data Mining", "Visualização de Dados", "Big Data", "Spark", "ETL"],
@@ -353,7 +343,6 @@
         return { text: question.text, options: newOptions, correct: newCorrect };
     }
 
-    // ==================== ÁREAS E PDFs ====================
     const areas = [
         { id: "cientista-dados", nome: "Cientista de Dados", icone: "brain", pdf: "ebook-cientista-dados.pdf" },
         { id: "engenheiro-dados", nome: "Engenheiro de Dados", icone: "database", pdf: "ebook-Engenheiro-Dados.pdf" },
@@ -364,24 +353,25 @@
     ];
 
     // ==================== RANKING ====================
-    async function atualizarRanking() {
-        const usuarios = await db.usuarios.toArray();
-        usuarios.sort((a,b) => (b.pontos || 0) - (a.pontos || 0));
-        const rankingList = document.getElementById('rankingList');
-        if (rankingList) {
-            rankingList.innerHTML = usuarios.slice(0,10).map(u => {
-                let dataInfo = '';
-                if (u.ultimoSimulado) {
-                    const data = new Date(u.ultimoSimulado);
-                    dataInfo = `<span class="small-date">${data.toLocaleDateString()} - ${u.ultimaPontuacao || 0}%</span>`;
-                }
-                return `<li><span>${u.nome} (${u.pontos || 0} pts)</span>${dataInfo}</li>`;
-            }).join('');
-        }
+    function atualizarRanking() {
+        return db.usuarios.toArray().then(usuarios => {
+            usuarios.sort((a,b) => (b.pontos || 0) - (a.pontos || 0));
+            const rankingList = document.getElementById('rankingList');
+            if (rankingList) {
+                rankingList.innerHTML = usuarios.slice(0,10).map(u => {
+                    let dataInfo = '';
+                    if (u.ultimoSimulado) {
+                        const data = new Date(u.ultimoSimulado);
+                        dataInfo = `<span class="small-date">${data.toLocaleDateString()} - ${u.ultimaPontuacao || 0}%</span>`;
+                    }
+                    return `<li><span>${u.nome} (${u.pontos || 0} pts)</span>${dataInfo}</li>`;
+                }).join('');
+            }
+        });
     }
 
     // ==================== DASHBOARD ====================
-    async function renderDashboard() {
+    function renderDashboard() {
         document.getElementById('userNameDisplay').innerText = `Olá, ${currentUser.nome}`;
         const adminBtn = document.getElementById('adminPanelBtn');
         if (currentUser.isAdmin) adminBtn.style.display = 'inline-block';
@@ -409,128 +399,139 @@
                 iniciarSimulado(area);
             });
         });
-        await atualizarRanking();
+        return atualizarRanking();
     }
 
     // ==================== ADMIN CRUD ====================
-    async function renderAdminPanel() {
-        const usuarios = await db.usuarios.toArray();
-        const tbody = document.getElementById('userTableBody');
-        tbody.innerHTML = '';
-        usuarios.forEach(u => {
-            const row = tbody.insertRow();
-            row.insertCell(0).innerText = u.id;
-            row.insertCell(1).innerHTML = `<input type="text" value="${u.nome}" class="edit-nome" data-id="${u.id}">`;
-            row.insertCell(2).innerHTML = `<input type="email" value="${u.email}" class="edit-email" data-id="${u.id}">`;
-            row.insertCell(3).innerHTML = `<input type="number" value="${u.pontos||0}" class="edit-pontos" data-id="${u.id}">`;
-            row.insertCell(4).innerHTML = `<input type="number" value="${u.downloadsRestantes}" class="edit-downloads" data-id="${u.id}">`;
-            const dataValue = u.ultimoSimulado ? new Date(u.ultimoSimulado).toISOString().split('T')[0] : '';
-            row.insertCell(5).innerHTML = `<input type="date" value="${dataValue}" class="edit-data" data-id="${u.id}">`;
-            row.insertCell(6).innerHTML = `<input type="number" step="1" min="0" max="100" value="${u.ultimaPontuacao||0}" class="edit-pontuacao" data-id="${u.id}">`;
-            const actions = row.insertCell(7);
-            actions.innerHTML = `<button class="save-user" data-id="${u.id}">Salvar</button> <button class="reset-pwd" data-id="${u.id}">Reset Senha</button> <button class="delete-user" data-id="${u.id}">Excluir</button>`;
-        });
-        document.querySelectorAll('.save-user').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const id = parseInt(btn.getAttribute('data-id'));
-                const nome = document.querySelector(`.edit-nome[data-id="${id}"]`).value;
-                const email = document.querySelector(`.edit-email[data-id="${id}"]`).value;
-                const pontos = parseInt(document.querySelector(`.edit-pontos[data-id="${id}"]`).value);
-                const downloads = parseInt(document.querySelector(`.edit-downloads[data-id="${id}"]`).value);
-                const dataStr = document.querySelector(`.edit-data[data-id="${id}"]`).value;
-                const pontuacao = parseInt(document.querySelector(`.edit-pontuacao[data-id="${id}"]`).value);
-                await db.usuarios.update(id, {
-                    nome, email, pontos, downloadsRestantes: downloads,
-                    ultimoSimulado: dataStr ? new Date(dataStr).toISOString() : null,
-                    ultimaPontuacao: isNaN(pontuacao) ? 0 : pontuacao
+    function renderAdminPanel() {
+        return db.usuarios.toArray().then(usuarios => {
+            const tbody = document.getElementById('userTableBody');
+            tbody.innerHTML = '';
+            usuarios.forEach(u => {
+                const row = tbody.insertRow();
+                row.insertCell(0).innerText = u.id;
+                row.insertCell(1).innerHTML = `<input type="text" value="${u.nome}" class="edit-nome" data-id="${u.id}">`;
+                row.insertCell(2).innerHTML = `<input type="email" value="${u.email}" class="edit-email" data-id="${u.id}">`;
+                row.insertCell(3).innerHTML = `<input type="number" value="${u.pontos||0}" class="edit-pontos" data-id="${u.id}">`;
+                row.insertCell(4).innerHTML = `<input type="number" value="${u.downloadsRestantes}" class="edit-downloads" data-id="${u.id}">`;
+                const dataValue = u.ultimoSimulado ? new Date(u.ultimoSimulado).toISOString().split('T')[0] : '';
+                row.insertCell(5).innerHTML = `<input type="date" value="${dataValue}" class="edit-data" data-id="${u.id}">`;
+                row.insertCell(6).innerHTML = `<input type="number" step="1" min="0" max="100" value="${u.ultimaPontuacao||0}" class="edit-pontuacao" data-id="${u.id}">`;
+                const actions = row.insertCell(7);
+                actions.innerHTML = `<button class="save-user" data-id="${u.id}">Salvar</button> <button class="reset-pwd" data-id="${u.id}">Reset Senha</button> <button class="delete-user" data-id="${u.id}">Excluir</button>`;
+            });
+            // Eventos
+            document.querySelectorAll('.save-user').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = parseInt(btn.getAttribute('data-id'));
+                    const nome = document.querySelector(`.edit-nome[data-id="${id}"]`).value;
+                    const email = document.querySelector(`.edit-email[data-id="${id}"]`).value;
+                    const pontos = parseInt(document.querySelector(`.edit-pontos[data-id="${id}"]`).value);
+                    const downloads = parseInt(document.querySelector(`.edit-downloads[data-id="${id}"]`).value);
+                    const dataStr = document.querySelector(`.edit-data[data-id="${id}"]`).value;
+                    const pontuacao = parseInt(document.querySelector(`.edit-pontuacao[data-id="${id}"]`).value);
+                    db.usuarios.update(id, {
+                        nome, email, pontos, downloadsRestantes: downloads,
+                        ultimoSimulado: dataStr ? new Date(dataStr).toISOString() : null,
+                        ultimaPontuacao: isNaN(pontuacao) ? 0 : pontuacao
+                    }).then(() => {
+                        if (currentUser.id === id) {
+                            currentUser = { ...currentUser, nome, email, pontos, downloadsRestantes: downloads, ultimoSimulado: dataStr ? new Date(dataStr).toISOString() : null, ultimaPontuacao: pontuacao };
+                        }
+                        renderAdminPanel();
+                        atualizarRanking();
+                    });
                 });
-                if (currentUser.id === id) {
-                    currentUser = { ...currentUser, nome, email, pontos, downloadsRestantes: downloads, ultimoSimulado: dataStr ? new Date(dataStr).toISOString() : null, ultimaPontuacao: pontuacao };
-                }
-                await renderAdminPanel();
-                await atualizarRanking();
             });
-        });
-        document.querySelectorAll('.reset-pwd').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const id = parseInt(btn.getAttribute('data-id'));
-                await resetarSenha(id, "123");
+            document.querySelectorAll('.reset-pwd').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = parseInt(btn.getAttribute('data-id'));
+                    resetarSenha(id, "123");
+                });
             });
-        });
-        document.querySelectorAll('.delete-user').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const id = parseInt(btn.getAttribute('data-id'));
-                if (id === currentUser.id) { alert("Não é possível excluir a si mesmo."); return; }
-                if (confirm("Excluir usuário?")) {
-                    await excluirUsuario(id);
-                    await renderAdminPanel();
-                    await atualizarRanking();
-                }
+            document.querySelectorAll('.delete-user').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = parseInt(btn.getAttribute('data-id'));
+                    if (id === currentUser.id) { alert("Não é possível excluir a si mesmo."); return; }
+                    if (confirm("Excluir usuário?")) {
+                        excluirUsuario(id).then(() => {
+                            renderAdminPanel();
+                            atualizarRanking();
+                        });
+                    }
+                });
             });
         });
     }
 
-    document.getElementById('addUserBtn')?.addEventListener('click', async () => {
+    document.getElementById('addUserBtn')?.addEventListener('click', () => {
         const nome = prompt("Nome:"); const email = prompt("E-mail:"); const senha = prompt("Senha:");
         if (nome && email && senha) {
-            if (await adicionarUsuario(nome, email, senha)) {
-                await renderAdminPanel();
-                await atualizarRanking();
-            } else alert("E-mail já existe.");
-        }
-    });
-    document.getElementById('exportCsvBtn')?.addEventListener('click', async () => {
-        const usuarios = await db.usuarios.toArray();
-        const cabecalho = ["Nome", "Email", "Pontos", "Downloads Restantes", "Ultimo Simulado", "Ultima Pontuacao (%)"];
-        const linhas = usuarios.map(u => [u.nome, u.email, u.pontos||0, u.downloadsRestantes, u.ultimoSimulado ? new Date(u.ultimoSimulado).toLocaleDateString() : "", u.ultimaPontuacao||""]);
-        const conteudoCSV = [cabecalho, ...linhas].map(row => row.map(cell => `"${cell}"`).join(",")).join("\n");
-        const blob = new Blob(["\uFEFF" + conteudoCSV], { type: "text/csv;charset=utf-8;" });
-        const link = document.createElement("a");
-        const url = URL.createObjectURL(blob);
-        link.href = url; link.setAttribute("download", "usuarios_export.csv");
-        document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url);
-    });
-    document.getElementById('gerarDadosExemploBtn')?.addEventListener('click', async () => {
-        const usuarios = await db.usuarios.toArray();
-        const hoje = new Date();
-        for (const u of usuarios) {
-            if (u.isAdmin) continue;
-            const diasAtras = Math.floor(Math.random() * 30);
-            const dataSimulado = new Date(hoje); dataSimulado.setDate(hoje.getDate() - diasAtras);
-            const pontuacaoPercentual = Math.floor(Math.random() * 101);
-            const novosPontos = Math.floor(pontuacaoPercentual * 1.5);
-            await db.usuarios.update(u.id, {
-                ultimoSimulado: dataSimulado.toISOString(),
-                ultimaPontuacao: pontuacaoPercentual,
-                pontos: novosPontos
+            adicionarUsuario(nome, email, senha).then(success => {
+                if (success) {
+                    renderAdminPanel();
+                    atualizarRanking();
+                } else alert("E-mail já existe.");
             });
         }
-        await renderAdminPanel();
-        await atualizarRanking();
-        alert("Dados de exemplo gerados!");
+    });
+    document.getElementById('exportCsvBtn')?.addEventListener('click', () => {
+        db.usuarios.toArray().then(usuarios => {
+            const cabecalho = ["Nome", "Email", "Pontos", "Downloads Restantes", "Ultimo Simulado", "Ultima Pontuacao (%)"];
+            const linhas = usuarios.map(u => [u.nome, u.email, u.pontos||0, u.downloadsRestantes, u.ultimoSimulado ? new Date(u.ultimoSimulado).toLocaleDateString() : "", u.ultimaPontuacao||""]);
+            const conteudoCSV = [cabecalho, ...linhas].map(row => row.map(cell => `"${cell}"`).join(",")).join("\n");
+            const blob = new Blob(["\uFEFF" + conteudoCSV], { type: "text/csv;charset=utf-8;" });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.href = url; link.setAttribute("download", "usuarios_export.csv");
+            document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url);
+        });
+    });
+    document.getElementById('gerarDadosExemploBtn')?.addEventListener('click', () => {
+        db.usuarios.toArray().then(usuarios => {
+            const hoje = new Date();
+            const updates = usuarios.filter(u => !u.isAdmin).map(u => {
+                const diasAtras = Math.floor(Math.random() * 30);
+                const dataSimulado = new Date(hoje); dataSimulado.setDate(hoje.getDate() - diasAtras);
+                const pontuacaoPercentual = Math.floor(Math.random() * 101);
+                const novosPontos = Math.floor(pontuacaoPercentual * 1.5);
+                return db.usuarios.update(u.id, {
+                    ultimoSimulado: dataSimulado.toISOString(),
+                    ultimaPontuacao: pontuacaoPercentual,
+                    pontos: novosPontos
+                });
+            });
+            Promise.all(updates).then(() => {
+                renderAdminPanel();
+                atualizarRanking();
+                alert("Dados de exemplo gerados!");
+            });
+        });
     });
 
     // ==================== SIMULADO ====================
     let questoesAtuais = [], respostas = [], indiceAtual = 0, tempoRestante = 600, timerInterval = null, simuladoFinalizado = false, areaAtual = null;
-    async function salvarProgressoSimulado() {
+    function salvarProgressoSimulado() {
         if (!simuladoFinalizado && areaAtual && currentUser) {
-            await db.progresso.put({
+            return db.progresso.put({
                 id: `${currentUser.id}_${areaAtual.id}`,
                 respostas: respostas,
                 tempoRestante: tempoRestante,
                 indiceAtual: indiceAtual
-            });
+            }).catch(e => console.log);
         }
+        return Promise.resolve();
     }
-    async function carregarProgressoSimulado() {
-        const saved = await db.progresso.get(`${currentUser.id}_${areaAtual.id}`);
-        if (saved) {
-            respostas = saved.respostas || new Array(questoesAtuais.length).fill(null);
-            tempoRestante = saved.tempoRestante ?? 600;
-            indiceAtual = saved.indiceAtual ?? 0;
-        } else {
-            respostas = new Array(questoesAtuais.length).fill(null);
-        }
+    function carregarProgressoSimulado() {
+        return db.progresso.get(`${currentUser.id}_${areaAtual.id}`).then(saved => {
+            if (saved) {
+                respostas = saved.respostas || new Array(questoesAtuais.length).fill(null);
+                tempoRestante = saved.tempoRestante ?? 600;
+                indiceAtual = saved.indiceAtual ?? 0;
+            } else {
+                respostas = new Array(questoesAtuais.length).fill(null);
+            }
+        });
     }
     function formatarTempo(s) { let m = Math.floor(s/60), seg = s%60; return `${m.toString().padStart(2,'0')}:${seg.toString().padStart(2,'0')}`; }
     function atualizarTimerUI() { document.getElementById('timerDisplay').innerText = formatarTempo(tempoRestante); }
@@ -567,87 +568,90 @@
         const respondidas = respostas.filter(r => r !== null).length;
         document.getElementById('progressFill').style.width = `${(respondidas/questoesAtuais.length)*100}%`;
     }
-    async function finalizarSimulado() {
+    function finalizarSimulado() {
         if (simuladoFinalizado) return;
         clearInterval(timerInterval); simuladoFinalizado = true;
         let acertos = 0;
         for (let i=0; i<questoesAtuais.length; i++) if (respostas[i] !== null && respostas[i] === questoesAtuais[i].correct) acertos++;
         const percentual = (acertos / questoesAtuais.length) * 100;
         const pontosGanhos = acertos * 5;
+        let updatePromise = Promise.resolve();
         if (pontosGanhos > 0) {
             currentUser.pontos += pontosGanhos;
             currentUser.ultimoSimulado = new Date().toISOString();
             currentUser.ultimaPontuacao = percentual.toFixed(1);
-            await atualizarUsuario(currentUser);
+            updatePromise = atualizarUsuario(currentUser);
         }
-        const resultsDiv = document.getElementById('resultsPanel');
-        resultsDiv.style.display = 'block';
-        let botoes = '';
-        if (percentual >= 70) {
-            if (currentUser.downloadsRestantes > 0) botoes = `<button id="downloadPdfBtn" class="btn btn-download" style="margin-top:1rem;"><i class="fas fa-download"></i> 📥 Baixar E-book (restam ${currentUser.downloadsRestantes})</button>`;
-            else botoes = `<p style="color:#c0392b;">⚠️ Você atingiu 70%, mas não tem mais downloads disponíveis.</p>`;
-        } else {
-            botoes = `<p style="color:#c0392b;">🔒 Atingiu ${percentual.toFixed(1)}% – mínimo 70% para baixar o PDF.</p><p><i class="fab fa-youtube"></i> <a href="https://www.youtube.com/@EstudandoTI_Brasil" target="_blank" style="color:#0b5e7c;">Assista as aulas no Youtube</a> para melhorar seu desempenho!</p>`;
-        }
-        resultsDiv.innerHTML = `<h3>Resultado Final</h3><div class="score">${acertos}/${questoesAtuais.length} (${percentual.toFixed(1)}%)</div><p>+${pontosGanhos} pontos (${acertos} acertos × 5)</p>${botoes}<button id="restartBtn" class="btn" style="margin-top:1rem;"><i class="fas fa-sync-alt"></i> Refazer Simulado</button>`;
-        document.getElementById('restartBtn')?.addEventListener('click', () => { iniciarSimulado(areaAtual); });
-        if (percentual >= 70 && currentUser.downloadsRestantes > 0) {
-            const downloadBtn = document.getElementById('downloadPdfBtn');
-            if (downloadBtn) downloadBtn.addEventListener('click', async () => {
-                if (currentUser.downloadsRestantes > 0) {
-                    currentUser.downloadsRestantes--;
-                    await atualizarUsuario(currentUser);
-                    alert(`Download liberado! Restam ${currentUser.downloadsRestantes} downloads.`);
-                    window.open(areaAtual.pdf, '_blank');
-                    downloadBtn.disabled = true; downloadBtn.style.opacity = '0.5';
-                } else alert("Sem downloads disponíveis.");
-            });
-        }
-        document.getElementById('submitBtn').disabled = true; document.getElementById('submitBtn').style.opacity = '0.6';
-        await db.progresso.delete(`${currentUser.id}_${areaAtual.id}`);
-        await atualizarRanking();
+        updatePromise.then(() => {
+            const resultsDiv = document.getElementById('resultsPanel');
+            resultsDiv.style.display = 'block';
+            let botoes = '';
+            if (percentual >= 70) {
+                if (currentUser.downloadsRestantes > 0) botoes = `<button id="downloadPdfBtn" class="btn btn-download" style="margin-top:1rem;"><i class="fas fa-download"></i> 📥 Baixar E-book (restam ${currentUser.downloadsRestantes})</button>`;
+                else botoes = `<p style="color:#c0392b;">⚠️ Você atingiu 70%, mas não tem mais downloads disponíveis.</p>`;
+            } else {
+                botoes = `<p style="color:#c0392b;">🔒 Atingiu ${percentual.toFixed(1)}% – mínimo 70% para baixar o PDF.</p><p><i class="fab fa-youtube"></i> <a href="https://www.youtube.com/@EstudandoTI_Brasil" target="_blank" style="color:#0b5e7c;">Assista as aulas no Youtube</a> para melhorar seu desempenho!</p>`;
+            }
+            resultsDiv.innerHTML = `<h3>Resultado Final</h3><div class="score">${acertos}/${questoesAtuais.length} (${percentual.toFixed(1)}%)</div><p>+${pontosGanhos} pontos (${acertos} acertos × 5)</p>${botoes}<button id="restartBtn" class="btn" style="margin-top:1rem;"><i class="fas fa-sync-alt"></i> Refazer Simulado</button>`;
+            document.getElementById('restartBtn')?.addEventListener('click', () => { iniciarSimulado(areaAtual); });
+            if (percentual >= 70 && currentUser.downloadsRestantes > 0) {
+                const downloadBtn = document.getElementById('downloadPdfBtn');
+                if (downloadBtn) downloadBtn.addEventListener('click', () => {
+                    if (currentUser.downloadsRestantes > 0) {
+                        currentUser.downloadsRestantes--;
+                        atualizarUsuario(currentUser).then(() => {
+                            alert(`Download liberado! Restam ${currentUser.downloadsRestantes} downloads.`);
+                            window.open(areaAtual.pdf, '_blank');
+                            downloadBtn.disabled = true; downloadBtn.style.opacity = '0.5';
+                        });
+                    } else alert("Sem downloads disponíveis.");
+                });
+            }
+            document.getElementById('submitBtn').disabled = true; document.getElementById('submitBtn').style.opacity = '0.6';
+            db.progresso.delete(`${currentUser.id}_${areaAtual.id}`).then(() => atualizarRanking());
+        });
     }
-    async function iniciarSimulado(area) {
+    function iniciarSimulado(area) {
         areaAtual = area;
         const questoesBase = obterQuestoesDaArea(area.id);
         questoesAtuais = questoesBase.map(q => shuffleOptions(q));
-        await carregarProgressoSimulado();
-        simuladoFinalizado = false;
-        const saved = await db.progresso.get(`${currentUser.id}_${areaAtual.id}`);
-        if (!saved) tempoRestante = 600;
-        atualizarTimerUI();
-        if (timerInterval) clearInterval(timerInterval);
-        iniciarTimer();
-        document.getElementById('simulatorTitle').innerHTML = `<i class="fas fa-${area.icone}"></i> ${area.nome}`;
-        renderizarNavegacao();
-        renderizarQuestao();
-        atualizarBarraProgresso();
-        document.getElementById('submitBtn').disabled = false; document.getElementById('submitBtn').style.opacity = '1';
-        document.getElementById('resultsPanel').style.display = 'none'; document.getElementById('resultsPanel').innerHTML = '';
-        document.getElementById('prevBtn').onclick = () => { if (indiceAtual > 0 && !simuladoFinalizado) { indiceAtual--; renderizarQuestao(); atualizarNavegacaoUI(); salvarProgressoSimulado(); } };
-        document.getElementById('nextBtn').onclick = () => { if (indiceAtual < questoesAtuais.length-1 && !simuladoFinalizado) { indiceAtual++; renderizarQuestao(); atualizarNavegacaoUI(); salvarProgressoSimulado(); } };
-        document.getElementById('submitBtn').onclick = () => { if (confirm("Finalizar simulado?")) finalizarSimulado(); };
-        showScreen('simulatorScreen');
+        carregarProgressoSimulado().then(() => {
+            simuladoFinalizado = false;
+            tempoRestante = tempoRestante || 600;
+            atualizarTimerUI();
+            if (timerInterval) clearInterval(timerInterval);
+            iniciarTimer();
+            document.getElementById('simulatorTitle').innerHTML = `<i class="fas fa-${area.icone}"></i> ${area.nome}`;
+            renderizarNavegacao();
+            renderizarQuestao();
+            atualizarBarraProgresso();
+            document.getElementById('submitBtn').disabled = false; document.getElementById('submitBtn').style.opacity = '1';
+            document.getElementById('resultsPanel').style.display = 'none'; document.getElementById('resultsPanel').innerHTML = '';
+            document.getElementById('prevBtn').onclick = () => { if (indiceAtual > 0 && !simuladoFinalizado) { indiceAtual--; renderizarQuestao(); atualizarNavegacaoUI(); salvarProgressoSimulado(); } };
+            document.getElementById('nextBtn').onclick = () => { if (indiceAtual < questoesAtuais.length-1 && !simuladoFinalizado) { indiceAtual++; renderizarQuestao(); atualizarNavegacaoUI(); salvarProgressoSimulado(); } };
+            document.getElementById('submitBtn').onclick = () => { if (confirm("Finalizar simulado?")) finalizarSimulado(); };
+            showScreen('simulatorScreen');
+        });
     }
 
     // ==================== CONTROLE DE TELAS ====================
     function showScreen(screenId) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(screenId).classList.add('active'); }
 
     // ==================== LOGIN ====================
-    async function fazerLogin() {
+    function fazerLogin() {
         const email = document.getElementById('loginEmail').value.trim();
         const senha = document.getElementById('loginSenha').value;
-        const user = await autenticar(email, senha);
-        if (user) {
-            currentUser = user;
-            localStorage.setItem('usuarioLogado', JSON.stringify({ id: user.id, nome: user.nome, email: user.email, pontos: user.pontos, downloadsRestantes: user.downloadsRestantes }));
-            await renderDashboard();
-            showScreen('dashboardScreen');
-        } else {
-            document.getElementById('authMsg').innerText = 'E-mail ou senha inválidos.';
-        }
+        autenticar(email, senha).then(user => {
+            if (user) {
+                currentUser = user;
+                localStorage.setItem('usuarioLogado', JSON.stringify({ id: user.id, nome: user.nome, email: user.email, pontos: user.pontos, downloadsRestantes: user.downloadsRestantes }));
+                renderDashboard().then(() => showScreen('dashboardScreen'));
+            } else {
+                document.getElementById('authMsg').innerText = 'E-mail ou senha inválidos.';
+            }
+        });
     }
-    async function fazerCadastro() {
+    function fazerCadastro() {
         const nome = document.getElementById('regNome').value.trim();
         const email = document.getElementById('regEmail').value.trim();
         const senha = document.getElementById('regSenha').value;
@@ -655,15 +659,17 @@
             document.getElementById('regMsg').innerText = 'Preencha todos os campos.';
             return;
         }
-        if (await adicionarUsuario(nome, email, senha)) {
-            document.getElementById('regMsg').innerText = 'Cadastro realizado! Faça login.';
-            setTimeout(() => {
-                document.getElementById('loginSection').style.display = 'block';
-                document.getElementById('registerSection').style.display = 'none';
-            }, 1500);
-        } else {
-            document.getElementById('regMsg').innerText = 'E-mail já existe.';
-        }
+        adicionarUsuario(nome, email, senha).then(success => {
+            if (success) {
+                document.getElementById('regMsg').innerText = 'Cadastro realizado! Faça login.';
+                setTimeout(() => {
+                    document.getElementById('loginSection').style.display = 'block';
+                    document.getElementById('registerSection').style.display = 'none';
+                }, 1500);
+            } else {
+                document.getElementById('regMsg').innerText = 'E-mail já existe.';
+            }
+        });
     }
     function logout() {
         localStorage.removeItem('usuarioLogado');
@@ -674,36 +680,64 @@
     const modal = document.getElementById('changePwdModal');
     document.getElementById('changePwdBtn').addEventListener('click', () => { modal.style.display = 'flex'; });
     document.getElementById('closeModal').addEventListener('click', () => { modal.style.display = 'none'; });
-    document.getElementById('confirmChangePwd').addEventListener('click', async () => {
+    document.getElementById('confirmChangePwd').addEventListener('click', () => {
         const oldPwd = document.getElementById('oldPassword').value;
         const newPwd = document.getElementById('newPassword').value;
         const confirmPwd = document.getElementById('confirmPassword').value;
         if (newPwd !== confirmPwd) { alert("Nova senha e confirmação não conferem."); return; }
-        if (await alterarMinhaSenha(oldPwd, newPwd)) {
-            modal.style.display = 'none';
-            document.getElementById('oldPassword').value = '';
-            document.getElementById('newPassword').value = '';
-            document.getElementById('confirmPassword').value = '';
-        }
+        alterarMinhaSenha(oldPwd, newPwd).then(success => {
+            if (success) {
+                modal.style.display = 'none';
+                document.getElementById('oldPassword').value = '';
+                document.getElementById('newPassword').value = '';
+                document.getElementById('confirmPassword').value = '';
+            }
+        });
     });
 
     // ==================== INICIALIZAÇÃO ====================
-   function iniciarApp() {
-    inicializarDadosPadrao().then(() => {
-        const savedUser = localStorage.getItem('usuarioLogado');
-        if (savedUser) {
-            const data = JSON.parse(savedUser);
-            db.usuarios.get(data.id).then(user => {
-                if (user) {
-                    currentUser = user;
-                    renderDashboard().then(() => showScreen('dashboardScreen'));
-                } else {
-                    showScreen('loginScreen');
-                }
-            });
-        } else {
-            showScreen('loginScreen');
-        }
+    function iniciarApp() {
+        inicializarDadosPadrao().then(() => {
+            const savedUser = localStorage.getItem('usuarioLogado');
+            if (savedUser) {
+                const data = JSON.parse(savedUser);
+                db.usuarios.get(data.id).then(user => {
+                    if (user) {
+                        currentUser = user;
+                        renderDashboard().then(() => showScreen('dashboardScreen'));
+                    } else {
+                        showScreen('loginScreen');
+                    }
+                });
+            } else {
+                showScreen('loginScreen');
+            }
+        });
+    }
+
+    iniciarApp();
+
+    // Eventos globais
+    document.getElementById('loginBtn').addEventListener('click', fazerLogin);
+    document.getElementById('registerBtn').addEventListener('click', fazerCadastro);
+    document.getElementById('showRegister').addEventListener('click', () => {
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('registerSection').style.display = 'block';
     });
-}
-iniciarApp();
+    document.getElementById('showLogin').addEventListener('click', () => {
+        document.getElementById('loginSection').style.display = 'block';
+        document.getElementById('registerSection').style.display = 'none';
+    });
+    document.getElementById('logoutBtn').addEventListener('click', logout);
+    document.getElementById('adminPanelBtn').addEventListener('click', () => {
+        renderAdminPanel().then(() => showScreen('adminScreen'));
+    });
+    document.getElementById('backFromAdmin').addEventListener('click', () => showScreen('dashboardScreen'));
+    document.getElementById('backToDashboard').addEventListener('click', () => {
+        if (timerInterval) clearInterval(timerInterval);
+        showScreen('dashboardScreen');
+        atualizarRanking();
+    });
+</script>
+</body>
+</html>
