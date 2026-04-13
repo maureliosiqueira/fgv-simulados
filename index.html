@@ -12,7 +12,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        /* (estilos idênticos à versão anterior, com acréscimos para o modal de ajuda) */
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0b2b44 0%, #1b5e7a 100%); min-height: 100vh; padding: 1rem; }
         .screen { max-width: 1400px; margin: 0 auto; background: white; border-radius: 2rem; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: none; }
@@ -313,7 +312,7 @@
     <div class="modal-content">
         <h3><i class="fas fa-graduation-cap"></i> Modo Estudo vs Modo Simulado</h3>
         <table style="width:100%; border-collapse:collapse; margin:1rem 0;">
-            <thead><tr style="background:#f0f7fa;"><th>Característica</th><th>Modo Simulado</th><th>Modo Estudo</th></tr></thead>
+            <thead><tr style="background:#f0f7fa;"><th>Característica</th><th>Modo Simulado</th><th>Modo Estudo</th></td></thead>
             <tbody>
                 <tr><td>⏱️ Timer</td><td>10 minutos</td><td>Sem limite</td></tr>
                 <tr><td>💬 Feedback imediato</td><td>❌ Não</td><td>✅ Sim (após cada resposta)</td></tr>
@@ -497,6 +496,20 @@
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
         pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
         pdf.save(`Certificado_${certificado.nome.replace(/ /g, '_')}.pdf`);
+    }
+
+    async function marcarModulosConcluidos(userId) {
+        const usuario = await db.usuarios.get(userId);
+        if (!usuario) return;
+        const todasAreas = ["cientista-dados", "engenheiro-dados", "analista-seguranca", "analista-infraestrutura", "analista-sistemas", "analista-ux"];
+        usuario.simuladosConcluidos = todasAreas;
+        await db.usuarios.update(userId, { simuladosConcluidos: todasAreas });
+        if (currentUser && currentUser.id === userId) {
+            currentUser.simuladosConcluidos = todasAreas;
+        }
+        alert("Módulos marcados como concluídos para este usuário.");
+        renderAdminPanel();
+        atualizarRanking();
     }
 
     // ==================== CRUD DE QUIZZES ====================
@@ -770,8 +783,7 @@
                 `<button class="btn start-simulado" data-area='${JSON.stringify(area)}'><i class="fas fa-play"></i> Simulado</button>` :
                 `<button class="btn btn-disabled" disabled><i class="fas fa-clock"></i> Em breve</button>`;
             const btnStudyMode = area.disponivel ? `<button class="btn study-mode toggle-study-mode" data-area-id="${area.id}" style="background:#6c757d;"><i class="fas fa-graduation-cap"></i> Modo estudo</button>` : '';
-            // Ícone de ajuda (interrogação) para explicar a diferença
-            const helpIcon = `<span class="help-icon" data-help="modoestudo"><i class="fas fa-question"></i></span>`;
+            const helpIcon = `<span class="help-icon" data-help="modoestudio"><i class="fas fa-question"></i></span>`;
             card.innerHTML = `
                 <div class="card-header"><i class="fas fa-${area.icone}"></i><h3>${area.nome}</h3></div>
                 <div class="card-body">
@@ -810,7 +822,6 @@
                 }
             })();
         });
-        // Evento para os ícones de ajuda
         document.querySelectorAll('.help-icon').forEach(icon => {
             icon.addEventListener('click', () => {
                 document.getElementById('modoEstudoHelpModal').style.display = 'flex';
@@ -838,13 +849,21 @@
                 row.insertCell(7).innerHTML = concluido ? '✅ Sim' : '❌ Não';
                 row.insertCell(8).innerHTML = u.certificadoEmitido ? '✅ Emitido' : '❌ Não emitido';
                 const actions = row.insertCell(9);
-                let btnCertificado = '';
-                if (concluido && !u.certificadoEmitido) {
-                    btnCertificado = `<button class="emitir-certificado-test" data-id="${u.id}" data-nome="${u.nome}">Emitir Certificado Teste</button> `;
-                } else if (u.certificadoEmitido) {
-                    btnCertificado = `<button class="ver-certificado-test" data-id="${u.id}">Ver Certificado</button> `;
+                let botoes = '';
+                botoes += `<button class="marcar-concluido" data-id="${u.id}" style="background:#ffaa33;">📌 Marcar Concluído</button> `;
+                if (!u.certificadoEmitido) {
+                    botoes += `<button class="emitir-certificado-test" data-id="${u.id}" data-nome="${u.nome}" style="background:#8e44ad;">🎓 Emitir Certificado</button> `;
+                } else if (u.certificadoDados) {
+                    botoes += `<button class="ver-certificado-test" data-id="${u.id}">📜 Ver Certificado</button> `;
                 }
-                actions.innerHTML = `${btnCertificado}<button class="save-user" data-id="${u.id}">Salvar</button> <button class="reset-pwd" data-id="${u.id}">Reset Senha</button> <button class="delete-user" data-id="${u.id}">Excluir</button>`;
+                botoes += `<button class="save-user" data-id="${u.id}">💾 Salvar</button> <button class="reset-pwd" data-id="${u.id}">🔑 Reset Senha</button> <button class="delete-user" data-id="${u.id}">🗑️ Excluir</button>`;
+                actions.innerHTML = botoes;
+            });
+            document.querySelectorAll('.marcar-concluido').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const id = parseInt(btn.getAttribute('data-id'));
+                    await marcarModulosConcluidos(id);
+                });
             });
             document.querySelectorAll('.emitir-certificado-test').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
@@ -852,8 +871,13 @@
                     const nome = btn.getAttribute('data-nome');
                     const usuario = await db.usuarios.get(id);
                     if (!verificarConclusaoCertificado(usuario)) {
-                        alert("Usuário não concluiu todos os módulos.");
-                        return;
+                        const confirmar = confirm("Este usuário ainda não concluiu todos os módulos. Deseja marcar como concluído agora e emitir o certificado?");
+                        if (confirmar) {
+                            await marcarModulosConcluidos(id);
+                        } else {
+                            alert("Certificado não emitido. Complete os módulos primeiro.");
+                            return;
+                        }
                     }
                     const rg = prompt("Digite o RG para o certificado:", "123456789");
                     const cpf = prompt("Digite o CPF para o certificado:", "000.000.000-00");
